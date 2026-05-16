@@ -101,23 +101,39 @@ pub(crate) mod win32 {
         h
     }
 
+    /// RAII guard: guarantees `CloseClipboard()` runs no matter how the calling
+    /// scope exits. CRITICAL — leaking the clipboard handle breaks Ctrl+C/Ctrl+V
+    /// system-wide until the process dies.
+    struct ClipboardGuard;
+    impl ClipboardGuard {
+        /// Open the clipboard and return a guard. Returns None if open failed.
+        unsafe fn acquire() -> Option<Self> {
+            OpenClipboard(None).ok()?;
+            Some(ClipboardGuard)
+        }
+    }
+    impl Drop for ClipboardGuard {
+        fn drop(&mut self) {
+            unsafe { let _ = CloseClipboard(); }
+        }
+    }
+
     /// Read plain text from the clipboard (CF_UNICODETEXT).
     pub fn read_text() -> Option<String> {
         unsafe {
-            OpenClipboard(None).ok()?;
+            let _guard = ClipboardGuard::acquire()?;
             let handle = GetClipboardData(CF_UNICODETEXT.0 as u32).ok()?;
             let hglobal = HGLOBAL(handle.0);
             let ptr = GlobalLock(hglobal) as *const u16;
             if ptr.is_null() {
-                let _ = CloseClipboard();
                 return None;
             }
             let len = (0..).take_while(|&i| *ptr.add(i) != 0).count();
             let slice = std::slice::from_raw_parts(ptr, len);
             let text = OsString::from_wide(slice).to_string_lossy().to_string();
             let _ = GlobalUnlock(hglobal);
-            let _ = CloseClipboard();
             Some(text)
+            // _guard drops here → CloseClipboard()
         }
     }
 
@@ -127,18 +143,20 @@ pub(crate) mod win32 {
     /// the same image on retry).
     pub fn read_image_bytes() -> Option<Vec<u8>> {
         unsafe {
-            OpenClipboard(None).ok()?;
-            let handle = GetClipboardData(CF_DIB.0 as u32).ok()?;
-            let hglobal = HGLOBAL(handle.0);
-            let ptr = GlobalLock(hglobal) as *const u8;
-            if ptr.is_null() {
-                let _ = CloseClipboard();
-                return None;
-            }
-            let size = GlobalSize(hglobal);
-            let bytes = std::slice::from_raw_parts(ptr, size).to_vec();
-            let _ = GlobalUnlock(hglobal);
-            let _ = CloseClipboard();
+            let bytes = {
+                let _guard = ClipboardGuard::acquire()?;
+                let handle = GetClipboardData(CF_DIB.0 as u32).ok()?;
+                let hglobal = HGLOBAL(handle.0);
+                let ptr = GlobalLock(hglobal) as *const u8;
+                if ptr.is_null() {
+                    return None;
+                }
+                let size = GlobalSize(hglobal);
+                let bytes = std::slice::from_raw_parts(ptr, size).to_vec();
+                let _ = GlobalUnlock(hglobal);
+                bytes
+                // _guard drops here → CloseClipboard()
+            };
 
             let now_ms = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
@@ -149,7 +167,7 @@ pub(crate) mod win32 {
             let mut guard = LAST_IMAGE_HASH.lock().unwrap();
             if let Some((prev_sig, prev_ms)) = *guard {
                 if prev_sig == sig && now_ms.saturating_sub(prev_ms) < IMAGE_DEDUP_WINDOW_MS {
-                    return None; // duplicate within window
+                    return None;
                 }
             }
             *guard = Some((sig, now_ms));
