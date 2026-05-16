@@ -1,0 +1,272 @@
+--------- beginning of main
+05-13 18:30:34.529 D/RelayClient(32460): Relay WS URL: ws://192.168.1.21:3000/ws
+05-13 18:30:34.542 D/LanDiscovery(32460): Discovery started, expecting room_hash=11cadc86
+05-13 18:30:34.564 D/LanDiscovery(32460): Service found: fbfd77f4-59bb-40b8-b28a-bbef52614bd9
+05-13 18:30:34.566 D/LanDiscovery(32460): Service found: 89fa931c-2042-42c2-9dfd-63bd11442801
+05-13 18:30:34.566 D/LanDiscovery(32460): Resolved fbfd77f4-59bb-40b8-b28a-bbef52614bd9: host=192.168.1.21 room_hash=11cadc86
+05-13 18:30:34.567 D/LiveCService(32460): LAN peer found: 192.168.1.21:7777
+05-13 18:30:34.567 D/LanClient(32460): Connecting to ws://192.168.1.21:7777/ws
+05-13 18:30:34.569 D/LanDiscovery(32460): Resolved 89fa931c-2042-42c2-9dfd-63bd11442801: host=192.168.1.13 room_hash=11cadc86
+05-13 18:30:34.569 D/LiveCService(32460): LAN peer found: 192.168.1.13:1
+05-13 18:30:34.569 D/LanClient(32460): Connecting to ws://192.168.1.13:1/ws
+05-13 18:30:35.448 D/LanDiscovery(32460): mDNS registered: 89fa931c-2042-42c2-9dfd-63bd11442801
+05-13 18:46:53.233 D/RelayClient(10145): Relay WS URL: ws://192.168.1.21:3000/ws
+05-13 18:46:53.242 D/LanDiscovery(10145): Discovery started, expecting room_hash=11cadc86
+05-13 18:46:53.293 W/RelayClient(10145): Relay onFailure n/a: CLEARTEXT communication to 192.168.1.21 not permitted by network security policy
+05-13 18:46:53.298 W/RelayClient(10145): Connect failed: CLEARTEXT communication to 192.168.1.21 not permitted by network security policy
+05-13 18:46:53.298 D/RelayClient(10145): Retrying in 1s
+05-13 18:46:53.378 D/LanDiscovery(10145): Service found: fbfd77f4-59bb-40b8-b28a-bbef52614bd9
+05-13 18:46:53.382 D/LanDiscovery(10145): Resolved fbfd77f4-59bb-40b8-b28a-bbef52614bd9: host=192.168.1.21 port=7777 room_hash=11cadc86 platform=windows
+05-13 18:46:53.382 D/LiveCService(10145): LAN peer found: 192.168.1.21:7777
+05-13 18:46:53.382 D/LanClient(10145): Connecting to ws://192.168.1.21:7777/ws
+05-13 18:46:53.388 W/LanClient(10145): LAN onFailure n/a: CLEARTEXT communication to 192.168.1.21 not permitted by network security policy
+05-13 18:46:53.389 W/LanClient(10145): LAN connect failed: CLEARTEXT communication to 192.168.1.21 not permitted by network security policy
+05-13 18:46:53.389 D/LanClient(10145): LAN retry in 1s
+05-13 18:46:54.245 D/LanDiscovery(10145): mDNS registered: 89fa931c-2042-42c2-9dfd-63bd11442801
+05-13 18:46:54.246 D/LanDiscovery(10145): Service found: 89fa931c-2042-42c2-9dfd-63bd11442801 (self, skipping)
+05-13 18:46:54.303 W/RelayClient(10145): Relay onFailure n/a: CLEARTEXT communication to 192.168.1.21 not permitted by network security policy
+05-13 18:46:54.304 W/RelayClient(10145): Connect failed: CLEARTEXT communication to 192.168.1.21 not permitted by network security policy
+05-13 18:46:54.304 D/RelayClient(10145): Retrying in 2s
+05-13 18:46:54.394 W/LanClient(10145): LAN onFailure n/a: CLEARTEXT communication to 192.168.1.21 not permitted by network security policy
+05-13 18:46:54.396 W/LanClient(10145): LAN connect failed: CLEARTEXT communication to 192.168.1.21 not permitted by network security policy
+05-13 18:46:54.396 D/LanClient(10145): LAN retry in 2s
+05-13 18:46:56.310 W/RelayClient(10145): Relay onFailure n/a: CLEARTEXT communication to 192.168.1.21 not permitted by network security policy
+05-13 18:46:56.312 W/RelayClient(10145): Connect failed: CLEARTEXT communication to 192.168.1.21 not permitted by network security policy
+05-13 18:46:56.312 D/RelayClient(10145): Retrying in 4s
+05-13 18:46:56.402 W/LanClient(10145): LAN onFailure n/a: CLEARTEXT communication to 192.168.1.21 not permitted by network security policy
+05-13 18:46:56.404 W/LanClient(10145): LAN connect failed: CLEARTEXT communication to 192.168.1.21 not permitted by network security policy
+05-13 18:46:56.404 D/LanClient(10145): LAN retry in 4s
+05-13 18:47:00.319 W/RelayClient(10145): Relay onFailure n/a: CLEARTEXT communication to 192.168.1.21 not permitted by network security policy
+05-13 18:47:00.320 W/RelayClient(10145): Connect failed: CLEARTEXT communication to 192.168.1.21 not permitted by network security policy
+05-13 18:47:00.320 D/RelayClient(10145): Retrying in 8s
+05-13 18:47:00.412 W/LanClient(10145): LAN onFailure n/a: CLEARTEXT communication to 192.168.1.21 not permitted by network security policy
+05-13 18:47:00.414 W/LanClient(10145): LAN connect failed: CLEARTEXT communication to 192.168.1.21 not permitted by network security policy
+05-13 18:47:00.414 D/LanClient(10145): LAN retry in 8s
+05-13 18:47:08.325 W/RelayClient(10145): Relay onFailure n/a: CLEARTEXT communication to 192.168.1.21 not permitted by network security policy
+05-13 18:47:08.328 W/RelayClient(10145): Connect failed: CLEARTEXT communication to 192.168.1.21 not permitted by network security policy
+05-13 18:47:08.328 D/RelayClient(10145): Retrying in 16s
+05-13 18:47:08.421 W/LanClient(10145): LAN onFailure n/a: CLEARTEXT communication to 192.168.1.21 not permitted by network security policy
+05-13 18:47:08.423 W/LanClient(10145): LAN connect failed: CLEARTEXT communication to 192.168.1.21 not permitted by network security policy
+05-13 18:47:08.423 D/LanClient(10145): LAN retry in 16s
+05-13 18:47:24.334 W/RelayClient(10145): Relay onFailure n/a: CLEARTEXT communication to 192.168.1.21 not permitted by network security policy
+05-13 18:47:24.335 W/RelayClient(10145): Connect failed: CLEARTEXT communication to 192.168.1.21 not permitted by network security policy
+05-13 18:47:24.335 D/RelayClient(10145): Retrying in 30s
+05-13 18:47:24.429 W/LanClient(10145): LAN onFailure n/a: CLEARTEXT communication to 192.168.1.21 not permitted by network security policy
+05-13 18:47:24.431 W/LanClient(10145): LAN connect failed: CLEARTEXT communication to 192.168.1.21 not permitted by network security policy
+05-13 18:47:24.431 D/LanClient(10145): LAN retry in 30s
+05-13 18:47:54.352 W/RelayClient(10145): Relay onFailure n/a: CLEARTEXT communication to 192.168.1.21 not permitted by network security policy
+05-13 18:47:54.356 W/RelayClient(10145): Connect failed: CLEARTEXT communication to 192.168.1.21 not permitted by network security policy
+05-13 18:47:54.357 D/RelayClient(10145): Retrying in 30s
+05-13 18:47:54.440 W/LanClient(10145): LAN onFailure n/a: CLEARTEXT communication to 192.168.1.21 not permitted by network security policy
+05-13 18:47:54.441 W/LanClient(10145): LAN connect failed: CLEARTEXT communication to 192.168.1.21 not permitted by network security policy
+05-13 18:47:54.442 D/LanClient(10145): LAN retry in 30s
+05-13 18:48:24.119 D/RelayClient(12880): Relay WS URL: ws://192.168.1.21:3000/ws
+05-13 18:48:24.156 D/LanDiscovery(12880): Discovery started, expecting room_hash=11cadc86
+05-13 18:48:24.229 D/LanDiscovery(12880): Service found: fbfd77f4-59bb-40b8-b28a-bbef52614bd9
+05-13 18:48:24.233 D/LanDiscovery(12880): Service found: 89fa931c-2042-42c2-9dfd-63bd11442801 (self, skipping)
+05-13 18:48:24.235 D/LanDiscovery(12880): Resolved fbfd77f4-59bb-40b8-b28a-bbef52614bd9: host=192.168.1.21 port=7777 room_hash=11cadc86 platform=windows
+05-13 18:48:24.235 D/LiveCService(12880): LAN peer found: 192.168.1.21:7777
+05-13 18:48:24.235 D/LanClient(12880): Connecting to ws://192.168.1.21:7777/ws
+05-13 18:48:24.342 D/LanClient(12880): LAN onOpen 101 ws://192.168.1.21:7777/ws
+05-13 18:48:24.345 D/RelayClient(12880): Relay onOpen 101 ws://192.168.1.21:3000/ws
+05-13 18:48:24.345 D/RelayClient(12880): Relay connected, sending device_join
+05-13 18:48:25.134 D/LanDiscovery(12880): mDNS registered: 89fa931c-2042-42c2-9dfd-63bd11442801
+05-13 18:48:34.421 W/LanClient(12880): LAN onFailure n/a: null
+05-13 18:48:34.423 W/LanClient(12880): LAN connect failed: null
+05-13 18:48:34.423 D/LanClient(12880): LAN retry in 1s
+05-13 18:48:35.529 D/LanClient(12880): LAN onOpen 101 ws://192.168.1.21:7777/ws
+05-13 18:48:45.546 W/LanClient(12880): LAN onFailure n/a: null
+05-13 18:48:45.547 W/LanClient(12880): LAN connect failed: null
+05-13 18:48:45.547 D/LanClient(12880): LAN retry in 2s
+05-13 18:48:47.569 D/LanClient(12880): LAN onOpen 101 ws://192.168.1.21:7777/ws
+05-13 18:48:57.649 W/LanClient(12880): LAN onFailure n/a: null
+05-13 18:48:57.650 W/LanClient(12880): LAN connect failed: null
+05-13 18:48:57.650 D/LanClient(12880): LAN retry in 4s
+05-13 18:49:01.705 D/LanClient(12880): LAN onOpen 101 ws://192.168.1.21:7777/ws
+05-13 18:49:11.736 W/LanClient(12880): LAN onFailure n/a: null
+05-13 18:49:11.736 W/LanClient(12880): LAN connect failed: null
+05-13 18:49:11.737 D/LanClient(12880): LAN retry in 8s
+05-13 18:49:19.850 D/LanClient(12880): LAN onOpen 101 ws://192.168.1.21:7777/ws
+05-13 18:49:24.740 W/LanClient(12880): LAN onFailure n/a: Connection reset
+05-13 18:49:24.758 W/LanClient(12880): LAN connect failed: Connection reset
+05-13 18:49:24.758 D/LanClient(12880): LAN retry in 16s
+05-13 18:49:45.768 W/LanClient(12880): LAN onFailure n/a: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 38540) after 5000ms
+05-13 18:49:45.769 W/LanClient(12880): LAN connect failed: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 38540) after 5000ms
+05-13 18:49:45.769 D/LanClient(12880): LAN retry in 30s
+05-13 18:50:20.775 W/LanClient(12880): LAN onFailure n/a: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 43644) after 5000ms
+05-13 18:50:20.776 W/LanClient(12880): LAN connect failed: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 43644) after 5000ms
+05-13 18:50:20.776 D/LanClient(12880): LAN retry in 30s
+05-13 18:50:55.829 W/LanClient(12880): LAN onFailure n/a: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 48862) after 5000ms
+05-13 18:50:55.831 W/LanClient(12880): LAN connect failed: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 48862) after 5000ms
+05-13 18:50:55.831 D/LanClient(12880): LAN retry in 30s
+05-13 18:51:00.492 D/LanDiscovery(12880): Service lost: fbfd77f4-59bb-40b8-b28a-bbef52614bd9
+05-13 18:51:30.863 W/LanClient(12880): LAN onFailure n/a: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 46750) after 5000ms
+05-13 18:51:30.879 W/LanClient(12880): LAN connect failed: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 46750) after 5000ms
+05-13 18:51:30.879 D/LanClient(12880): LAN retry in 30s
+05-13 18:52:05.921 W/LanClient(12880): LAN onFailure n/a: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 49296) after 5000ms
+05-13 18:52:05.923 W/LanClient(12880): LAN connect failed: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 49296) after 5000ms
+05-13 18:52:05.924 D/LanClient(12880): LAN retry in 30s
+05-13 18:52:40.941 W/LanClient(12880): LAN onFailure n/a: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 44148) after 5000ms
+05-13 18:52:40.945 W/LanClient(12880): LAN connect failed: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 44148) after 5000ms
+05-13 18:52:40.945 D/LanClient(12880): LAN retry in 30s
+05-13 18:53:15.997 W/LanClient(12880): LAN onFailure n/a: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 39110) after 5000ms
+05-13 18:53:16.000 W/LanClient(12880): LAN connect failed: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 39110) after 5000ms
+05-13 18:53:16.000 D/LanClient(12880): LAN retry in 30s
+05-13 18:53:51.061 W/LanClient(12880): LAN onFailure n/a: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 42450) after 5000ms
+05-13 18:53:51.069 W/LanClient(12880): LAN connect failed: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 42450) after 5000ms
+05-13 18:53:51.069 D/LanClient(12880): LAN retry in 30s
+05-13 18:54:26.118 W/LanClient(12880): LAN onFailure n/a: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 42014) after 5000ms
+05-13 18:54:26.122 W/LanClient(12880): LAN connect failed: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 42014) after 5000ms
+05-13 18:54:26.122 D/LanClient(12880): LAN retry in 30s
+05-13 18:54:38.652 D/RelayClient(19949): Relay WS URL: ws://192.168.1.21:3000/ws
+05-13 18:54:38.676 D/LanDiscovery(19949): Discovery started, expecting room_hash=11cadc86
+05-13 18:54:38.776 D/LanDiscovery(19949): Service found: 89fa931c-2042-42c2-9dfd-63bd11442801 (self, skipping)
+05-13 18:54:38.871 D/RelayClient(19949): Relay onOpen 101 ws://192.168.1.21:3000/ws
+05-13 18:54:38.872 D/RelayClient(19949): Relay connected, sending device_join
+05-13 18:54:39.683 D/LanDiscovery(19949): mDNS registered: 89fa931c-2042-42c2-9dfd-63bd11442801
+05-13 18:56:13.629 D/RelayClient(22994): Relay WS URL: ws://192.168.1.21:3000/ws
+05-13 18:56:13.655 D/LanDiscovery(22994): Discovery started, expecting room_hash=11cadc86
+05-13 18:56:13.747 D/LanDiscovery(22994): Service found: 89fa931c-2042-42c2-9dfd-63bd11442801 (self, skipping)
+05-13 18:56:13.870 D/RelayClient(22994): Relay onOpen 101 ws://192.168.1.21:3000/ws
+05-13 18:56:13.894 D/RelayClient(22994): Relay connected, sending device_join
+05-13 18:56:14.661 D/LanDiscovery(22994): mDNS registered: 89fa931c-2042-42c2-9dfd-63bd11442801
+05-13 18:56:35.887 D/LiveCService(22994): Handle device_join id=f1162050 from=test-pc-
+05-13 18:56:36.301 D/LiveCService(22994): Handle clipboard_text id=dup-test from=test-pc-
+05-13 18:56:36.321 D/LiveCService(22994): Dedup drop clipboard_text id=dup-test
+05-13 18:56:36.322 D/LiveCService(22994): Handle clipboard_text id=unique-1 from=test-pc-
+05-13 18:56:37.111 D/LiveCService(22994): Handle device_leave id=bec63473 from=test-pc-
+05-13 19:02:29.438 W/RelayClient(22994): Relay onFailure n/a: Connection reset
+05-13 19:02:29.472 W/RelayClient(22994): Connect failed: Connection reset
+05-13 19:02:29.473 D/RelayClient(22994): Retrying in 1s
+05-13 19:02:40.498 W/RelayClient(22994): Relay onFailure n/a: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 42576) after 10000ms
+05-13 19:02:40.500 W/RelayClient(22994): Connect failed: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 42576) after 10000ms
+05-13 19:02:40.500 D/RelayClient(22994): Retrying in 2s
+05-13 19:02:52.519 W/RelayClient(22994): Relay onFailure n/a: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 42712) after 10000ms
+05-13 19:02:52.524 W/RelayClient(22994): Connect failed: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 42712) after 10000ms
+05-13 19:02:52.525 D/RelayClient(22994): Retrying in 4s
+05-13 19:03:06.554 W/RelayClient(22994): Relay onFailure n/a: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 40558) after 10000ms
+05-13 19:03:06.558 W/RelayClient(22994): Connect failed: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 40558) after 10000ms
+05-13 19:03:06.558 D/RelayClient(22994): Retrying in 8s
+05-13 19:03:24.596 W/RelayClient(22994): Relay onFailure n/a: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 37654) after 10000ms
+05-13 19:03:24.600 W/RelayClient(22994): Connect failed: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 37654) after 10000ms
+05-13 19:03:24.600 D/RelayClient(22994): Retrying in 16s
+05-13 19:03:50.643 W/RelayClient(22994): Relay onFailure n/a: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 43854) after 10000ms
+05-13 19:03:50.653 W/RelayClient(22994): Connect failed: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 43854) after 10000ms
+05-13 19:03:50.654 D/RelayClient(22994): Retrying in 30s
+05-13 19:04:30.746 W/RelayClient(22994): Relay onFailure n/a: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 47594) after 10000ms
+05-13 19:04:30.754 W/RelayClient(22994): Connect failed: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 47594) after 10000ms
+05-13 19:04:30.754 D/RelayClient(22994): Retrying in 30s
+05-13 19:05:10.809 W/RelayClient(22994): Relay onFailure n/a: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 48384) after 10000ms
+05-13 19:05:10.815 W/RelayClient(22994): Connect failed: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 48384) after 10000ms
+05-13 19:05:10.815 D/RelayClient(22994): Retrying in 30s
+05-13 19:05:50.867 W/RelayClient(22994): Relay onFailure n/a: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 39206) after 10000ms
+05-13 19:05:50.875 W/RelayClient(22994): Connect failed: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 39206) after 10000ms
+05-13 19:05:50.875 D/RelayClient(22994): Retrying in 30s
+05-13 19:06:30.937 W/RelayClient(22994): Relay onFailure n/a: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 45908) after 10000ms
+05-13 19:06:30.949 W/RelayClient(22994): Connect failed: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 45908) after 10000ms
+05-13 19:06:30.949 D/RelayClient(22994): Retrying in 30s
+05-13 19:07:11.029 W/RelayClient(22994): Relay onFailure n/a: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 47560) after 10000ms
+05-13 19:07:11.035 W/RelayClient(22994): Connect failed: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 47560) after 10000ms
+05-13 19:07:11.035 D/RelayClient(22994): Retrying in 30s
+05-13 19:07:51.101 W/RelayClient(22994): Relay onFailure n/a: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 37840) after 10000ms
+05-13 19:07:51.107 W/RelayClient(22994): Connect failed: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 37840) after 10000ms
+05-13 19:07:51.107 D/RelayClient(22994): Retrying in 30s
+05-13 19:08:31.146 W/RelayClient(22994): Relay onFailure n/a: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 39426) after 10000ms
+05-13 19:08:31.149 W/RelayClient(22994): Connect failed: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 39426) after 10000ms
+05-13 19:08:31.149 D/RelayClient(22994): Retrying in 30s
+05-13 19:09:11.195 W/RelayClient(22994): Relay onFailure n/a: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 46104) after 10000ms
+05-13 19:09:11.201 W/RelayClient(22994): Connect failed: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 46104) after 10000ms
+05-13 19:09:11.201 D/RelayClient(22994): Retrying in 30s
+05-13 19:11:19.587 W/RelayClient(22994): Relay onFailure n/a: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 43276) after 10000ms
+05-13 19:11:19.596 W/RelayClient(22994): Connect failed: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 43276) after 10000ms
+05-13 19:11:19.596 D/RelayClient(22994): Retrying in 30s
+05-13 19:13:48.444 D/LanDiscovery(22994): Service found: fbfd77f4-59bb-40b8-b28a-bbef52614bd9
+05-13 19:13:48.523 D/LanDiscovery(22994): Resolved fbfd77f4-59bb-40b8-b28a-bbef52614bd9: host=192.168.1.21 port=7777 room_hash=11cadc86 platform=windows
+05-13 19:13:48.523 D/LiveCService(22994): LAN peer found: 192.168.1.21:7777
+05-13 19:13:48.524 D/LanClient(22994): Connecting to ws://192.168.1.21:7777/ws
+05-13 19:13:48.943 D/LanClient(22994): LAN onOpen 101 ws://192.168.1.21:7777/ws
+05-13 19:13:48.983 D/LiveCService(22994): Handle device_join id=7282ec7c from=fbfd77f4
+05-13 19:13:58.696 W/RelayClient(22994): Relay onFailure n/a: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 43502) after 10000ms
+05-13 19:13:58.699 W/RelayClient(22994): Connect failed: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 43502) after 10000ms
+05-13 19:13:58.699 D/RelayClient(22994): Retrying in 30s
+05-13 19:14:38.756 W/RelayClient(22994): Relay onFailure n/a: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 41928) after 10000ms
+05-13 19:14:38.785 W/RelayClient(22994): Connect failed: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 41928) after 10000ms
+05-13 19:14:38.785 D/RelayClient(22994): Retrying in 30s
+05-13 19:15:18.853 W/RelayClient(22994): Relay onFailure n/a: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 39216) after 10000ms
+05-13 19:15:18.857 W/RelayClient(22994): Connect failed: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 39216) after 10000ms
+05-13 19:15:18.857 D/RelayClient(22994): Retrying in 30s
+05-13 19:15:27.824 W/LanClient(22994): LAN onFailure n/a: Connection reset
+05-13 19:15:27.840 W/LanClient(22994): LAN connect failed: Connection reset
+05-13 19:15:27.840 D/LanClient(22994): LAN retry in 1s
+05-13 19:15:33.875 W/LanClient(22994): LAN onFailure n/a: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 41078) after 5000ms
+05-13 19:15:33.880 W/LanClient(22994): LAN connect failed: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 41078) after 5000ms
+05-13 19:15:33.880 D/LanClient(22994): LAN retry in 2s
+05-13 19:15:40.898 W/LanClient(22994): LAN onFailure n/a: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 43286) after 5000ms
+05-13 19:15:40.903 W/LanClient(22994): LAN connect failed: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 43286) after 5000ms
+05-13 19:15:40.903 D/LanClient(22994): LAN retry in 4s
+05-13 19:15:49.952 W/LanClient(22994): LAN onFailure n/a: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 45302) after 5000ms
+05-13 19:15:49.960 W/LanClient(22994): LAN connect failed: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 45302) after 5000ms
+05-13 19:15:49.960 D/LanClient(22994): LAN retry in 8s
+05-13 19:15:58.882 W/RelayClient(22994): Relay onFailure n/a: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 48462) after 10000ms
+05-13 19:15:58.884 W/RelayClient(22994): Connect failed: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 48462) after 10000ms
+05-13 19:15:58.884 D/RelayClient(22994): Retrying in 30s
+05-13 19:16:02.983 W/LanClient(22994): LAN onFailure n/a: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 41992) after 5000ms
+05-13 19:16:02.984 W/LanClient(22994): LAN connect failed: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 41992) after 5000ms
+05-13 19:16:02.984 D/LanClient(22994): LAN retry in 16s
+05-13 19:16:24.020 W/LanClient(22994): LAN onFailure n/a: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 45530) after 5000ms
+05-13 19:16:24.023 W/LanClient(22994): LAN connect failed: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 45530) after 5000ms
+05-13 19:16:24.023 D/LanClient(22994): LAN retry in 30s
+05-13 19:16:26.635 D/LanDiscovery(22994): Service lost: fbfd77f4-59bb-40b8-b28a-bbef52614bd9
+05-13 19:16:38.941 W/RelayClient(22994): Relay onFailure n/a: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 44140) after 10000ms
+05-13 19:16:38.943 W/RelayClient(22994): Connect failed: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 44140) after 10000ms
+05-13 19:16:38.944 D/RelayClient(22994): Retrying in 30s
+05-13 19:16:59.049 W/LanClient(22994): LAN onFailure n/a: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 42602) after 5000ms
+05-13 19:16:59.052 W/LanClient(22994): LAN connect failed: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 42602) after 5000ms
+05-13 19:16:59.052 D/LanClient(22994): LAN retry in 30s
+05-13 19:17:18.993 W/RelayClient(22994): Relay onFailure n/a: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 44424) after 10000ms
+05-13 19:17:18.995 W/RelayClient(22994): Connect failed: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 44424) after 10000ms
+05-13 19:17:18.995 D/RelayClient(22994): Retrying in 30s
+05-13 19:17:34.103 W/LanClient(22994): LAN onFailure n/a: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 41596) after 5000ms
+05-13 19:17:34.108 W/LanClient(22994): LAN connect failed: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 41596) after 5000ms
+05-13 19:17:34.108 D/LanClient(22994): LAN retry in 30s
+05-13 19:17:59.066 W/RelayClient(22994): Relay onFailure n/a: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 39048) after 10000ms
+05-13 19:17:59.071 W/RelayClient(22994): Connect failed: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 39048) after 10000ms
+05-13 19:17:59.071 D/RelayClient(22994): Retrying in 30s
+05-13 19:18:09.139 W/LanClient(22994): LAN onFailure n/a: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 49856) after 5000ms
+05-13 19:18:09.150 W/LanClient(22994): LAN connect failed: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 49856) after 5000ms
+05-13 19:18:09.151 D/LanClient(22994): LAN retry in 30s
+05-13 19:18:39.141 W/RelayClient(22994): Relay onFailure n/a: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 48208) after 10000ms
+05-13 19:18:39.145 W/RelayClient(22994): Connect failed: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 48208) after 10000ms
+05-13 19:18:39.145 D/RelayClient(22994): Retrying in 30s
+05-13 19:18:44.173 W/LanClient(22994): LAN onFailure n/a: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 38786) after 5000ms
+05-13 19:18:44.176 W/LanClient(22994): LAN connect failed: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 38786) after 5000ms
+05-13 19:18:44.176 D/LanClient(22994): LAN retry in 30s
+05-13 19:19:19.197 W/LanClient(22994): LAN onFailure n/a: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 48724) after 5000ms
+05-13 19:19:19.203 W/LanClient(22994): LAN connect failed: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 48724) after 5000ms
+05-13 19:19:19.203 D/LanClient(22994): LAN retry in 30s
+05-13 19:19:19.234 W/RelayClient(22994): Relay onFailure n/a: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 38164) after 10000ms
+05-13 19:19:19.236 W/RelayClient(22994): Connect failed: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 38164) after 10000ms
+05-13 19:19:19.236 D/RelayClient(22994): Retrying in 30s
+05-13 19:19:54.255 W/LanClient(22994): LAN onFailure n/a: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 40752) after 5000ms
+05-13 19:19:54.259 W/LanClient(22994): LAN connect failed: failed to connect to /192.168.1.21 (port 7777) from /192.168.1.13 (port 40752) after 5000ms
+05-13 19:19:54.260 D/LanClient(22994): LAN retry in 30s
+05-13 19:19:57.244 D/LanDiscovery(22994): Service found: fbfd77f4-59bb-40b8-b28a-bbef52614bd9
+05-13 19:19:57.254 D/LanDiscovery(22994): Resolved fbfd77f4-59bb-40b8-b28a-bbef52614bd9: host=192.168.1.21 port=7777 room_hash=11cadc86 platform=windows
+05-13 19:19:57.254 D/LiveCService(22994): LAN peer found: 192.168.1.21:7777
+05-13 19:19:59.256 W/RelayClient(22994): Relay onFailure n/a: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 49614) after 10000ms
+05-13 19:19:59.257 W/RelayClient(22994): Connect failed: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 49614) after 10000ms
+05-13 19:19:59.257 D/RelayClient(22994): Retrying in 30s
+05-13 19:20:24.536 D/LanClient(22994): LAN onOpen 101 ws://192.168.1.21:7777/ws
+05-13 19:20:24.571 D/LiveCService(22994): Handle device_join id=ff541dad from=fbfd77f4
+05-13 19:20:39.280 W/RelayClient(22994): Relay onFailure n/a: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 37482) after 10000ms
+05-13 19:20:39.280 W/RelayClient(22994): Connect failed: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 37482) after 10000ms
+05-13 19:20:39.280 D/RelayClient(22994): Retrying in 30s
+05-13 19:20:55.001 D/LiveCService(22994): Handle clipboard_text id=7fcd4793 from=fbfd77f4
+05-13 19:21:19.298 W/RelayClient(22994): Relay onFailure n/a: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 48386) after 10000ms
+05-13 19:21:19.300 W/RelayClient(22994): Connect failed: failed to connect to /192.168.1.21 (port 3000) from /192.168.1.13 (port 48386) after 10000ms
+05-13 19:21:19.300 D/RelayClient(22994): Retrying in 30s
+05-13 19:21:49.372 D/RelayClient(22994): Relay onOpen 101 ws://192.168.1.21:3000/ws
+05-13 19:21:49.373 D/RelayClient(22994): Relay connected, sending device_join
+05-13 19:22:08.002 D/LiveCService(22994): Handle device_join id=32dfc22e from=fbfd77f4
+05-13 19:22:21.310 D/LiveCService(22994): Handle clipboard_text id=7a7daf91 from=fbfd77f4
+05-13 19:22:21.319 D/LiveCService(22994): Dedup drop clipboard_text id=7a7daf91

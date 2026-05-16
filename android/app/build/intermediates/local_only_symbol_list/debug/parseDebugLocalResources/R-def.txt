@@ -1,0 +1,9 @@
+R_DEF: Internal format may change without notice
+local
+string app_name
+string files_channel_name
+string service_channel_description
+string service_channel_name
+style Theme.LiveC
+xml data_extraction_rules
+xml file_paths

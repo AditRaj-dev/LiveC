@@ -1,0 +1,2028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LiveC — Android UI Mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0a0a0c;
+    color: #f4f4f5;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    padding: 48px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 64px;
+  }
+
+  h1 {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(244,244,245,0.4);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 22px;
+  }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(244,244,245,0.35);
+  }
+
+  .row {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .frame-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .frame-caption {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(244,244,245,0.4);
+  }
+
+  /* ── Phone frame ───────────────────────────────────────────── */
+  .phone {
+    width: 340px;
+    height: 700px;
+    background: #09090b;
+    border: 8px solid #18181b;
+    border-radius: 38px;
+    box-shadow:
+      0 28px 64px rgba(0,0,0,0.7),
+      0 10px 24px rgba(0,0,0,0.4),
+      inset 0 0 0 1px rgba(255,255,255,0.04);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Notch */
+  .phone::before {
+    content: "";
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90px;
+    height: 22px;
+    background: #18181b;
+    border-radius: 0 0 14px 14px;
+    z-index: 60;
+  }
+
+  /* Subtle dotted texture */
+  .phone-surface {
+    flex: 1;
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(255,255,255,0.03) 1px, transparent 0);
+    background-size: 18px 18px;
+    background-color: #0a0a0c;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Status bar */
+  .status-bar {
+    height: 30px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 22px;
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(244,244,245,0.7);
+    z-index: 50;
+  }
+  .status-icons {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+  }
+
+  /* ── Top app bar ───────────────────────────────────────────── */
+  .top-bar {
+    height: 52px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    background: rgba(24,24,27,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(42,42,46,0.7);
+  }
+
+  .top-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .logo-mark {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: #fbbf24;
+    box-shadow: 0 0 12px rgba(251,191,36,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .logo-text {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: #f4f4f5;
+  }
+
+  .top-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* Connection chip */
+  .conn-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  .conn-chip.online {
+    background: rgba(52,211,153,0.1);
+    border: 1px solid rgba(52,211,153,0.25);
+    color: #34d399;
+  }
+
+  .conn-chip.offline {
+    background: rgba(244,244,245,0.04);
+    border: 1px solid rgba(244,244,245,0.08);
+    color: rgba(244,244,245,0.5);
+  }
+
+  .pulse-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    position: relative;
+  }
+  .pulse-dot::after {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.35;
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.35; }
+    50% { transform: scale(1.8); opacity: 0; }
+  }
+
+  .icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(244,244,245,0.65);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .icon-btn:hover {
+    background: rgba(255,255,255,0.06);
+    color: #f4f4f5;
+  }
+
+  /* ── Content area ──────────────────────────────────────────── */
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 14px 90px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* Room banner (paired) */
+  .room-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    background: rgba(251,191,36,0.06);
+    border: 1px solid rgba(251,191,36,0.2);
+    border-radius: 12px;
+  }
+
+  .room-banner .key-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(251,191,36,0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .room-banner-text { flex: 1; min-width: 0; }
+  .room-banner-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(244,244,245,0.4);
+  }
+  .room-banner-id {
+    font-family: 'SF Mono', 'Cascadia Code', Consolas, monospace;
+    font-size: 12px;
+    color: #f4f4f5;
+    margin-top: 2px;
+  }
+
+  .room-banner-action {
+    padding: 6px 10px;
+    background: rgba(244,244,245,0.06);
+    border: 1px solid rgba(244,244,245,0.1);
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(244,244,245,0.85);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .room-banner-action:hover { background: rgba(244,244,245,0.1); }
+  .room-banner-action.share {
+    background: rgba(251,191,36,0.12);
+    border-color: rgba(251,191,36,0.3);
+    color: #fbbf24;
+  }
+  .room-banner-action.leave {
+    color: #fb7185;
+  }
+
+  /* Section header */
+  .section-header {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(244,244,245,0.4);
+    padding: 10px 4px 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .section-header .count {
+    font-weight: 500;
+    color: rgba(244,244,245,0.3);
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  /* ── Cards ─────────────────────────────────────────────────── */
+  .card {
+    background: rgba(24,24,27,0.7);
+    border: 1px solid rgba(42,42,46,0.8);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .card:hover {
+    border-color: rgba(251,191,36,0.25);
+    background: rgba(24,24,27,0.9);
+  }
+
+  .card-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .card-icon.amber { background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.18); }
+  .card-icon.green { background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.18); }
+  .card-icon.blue  { background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.18); }
+  .card-icon.sky   { background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.18); }
+
+  .card-body { flex: 1; min-width: 0; }
+  .card-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: #f4f4f5;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .card-meta {
+    font-size: 11px;
+    color: rgba(244,244,245,0.45);
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .card-meta .dot {
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    background: rgba(244,244,245,0.3);
+    flex-shrink: 0;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .badge.remote { background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.25); color: #38bdf8; }
+  .badge.local  { background: rgba(244,244,245,0.06); border: 1px solid rgba(244,244,245,0.1); color: rgba(244,244,245,0.5); }
+  .badge.image  { background: rgba(251,191,36,0.12); border: 1px solid rgba(251,191,36,0.25); color: #fbbf24; }
+
+  .card-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #34d399;
+    box-shadow: 0 0 6px rgba(52,211,153,0.5);
+    flex-shrink: 0;
+  }
+
+  .card-action {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    background: rgba(251,191,36,0.1);
+    border: 1px solid rgba(251,191,36,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fbbf24;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .card-action:hover { background: rgba(251,191,36,0.18); }
+
+  /* Clip card preview text */
+  .clip-text {
+    font-size: 13px;
+    color: rgba(244,244,245,0.85);
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;
+    font-family: 'SF Mono', 'Cascadia Code', Consolas, monospace;
+    margin-top: 2px;
+  }
+
+  .clip-image-preview {
+    margin-top: 6px;
+    width: 100%;
+    max-height: 120px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border: 1px solid rgba(255,255,255,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 88px;
+  }
+
+  /* Transfer status pills */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .pill.pending { background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.25); color: #fbbf24; }
+  .pill.done    { background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.25); color: #34d399; }
+  .pill.error   { background: rgba(251,113,133,0.1); border: 1px solid rgba(251,113,133,0.25); color: #fb7185; }
+  .pill.in-progress { background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.25); color: #38bdf8; }
+
+  /* Direction arrow */
+  .direction {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .direction.incoming { background: rgba(56,189,248,0.15); color: #38bdf8; }
+  .direction.outgoing { background: rgba(251,191,36,0.15); color: #fbbf24; }
+
+  /* ── Bottom navigation ─────────────────────────────────────── */
+  .bottom-nav {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 72px;
+    background: rgba(15,15,17,0.92);
+    backdrop-filter: blur(16px);
+    border-top: 1px solid rgba(42,42,46,0.8);
+    display: flex;
+    align-items: stretch;
+    padding: 8px 12px 14px;
+    z-index: 40;
+  }
+
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    cursor: pointer;
+    color: rgba(244,244,245,0.4);
+    transition: color 0.15s;
+    position: relative;
+  }
+  .nav-item:hover { color: rgba(244,244,245,0.7); }
+
+  .nav-item.active { color: #fbbf24; }
+  .nav-item.active .nav-icon-wrap {
+    background: rgba(251,191,36,0.12);
+  }
+
+  .nav-icon-wrap {
+    width: 48px;
+    height: 26px;
+    border-radius: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+
+  .nav-label {
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  /* ── Empty state ───────────────────────────────────────────── */
+  .empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 40px 24px;
+    text-align: center;
+  }
+  .empty-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: rgba(39,39,42,0.7);
+    border: 1px solid rgba(42,42,46,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(244,244,245,0.35);
+  }
+  .empty-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #f4f4f5;
+  }
+  .empty-sub {
+    font-size: 12px;
+    color: rgba(244,244,245,0.45);
+    max-width: 240px;
+    line-height: 1.5;
+  }
+
+  /* ── QR Pair CTA (unpaired) ────────────────────────────────── */
+  .pair-cta {
+    margin: 14px 0 0;
+    padding: 28px 22px;
+    border-radius: 18px;
+    background:
+      linear-gradient(180deg, rgba(251,191,36,0.06), rgba(251,191,36,0.0)),
+      linear-gradient(180deg, rgba(24,24,27,0.9), rgba(15,15,17,0.9));
+    border: 1px solid rgba(251,191,36,0.25);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    box-shadow:
+      0 16px 40px rgba(0,0,0,0.4),
+      inset 0 1px 0 rgba(251,191,36,0.15);
+  }
+  .pair-cta-icon-wrap {
+    width: 64px;
+    height: 64px;
+    border-radius: 18px;
+    background: rgba(251,191,36,0.1);
+    border: 1px solid rgba(251,191,36,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 32px rgba(251,191,36,0.2);
+  }
+  .pair-cta h2 {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: #f4f4f5;
+  }
+  .pair-cta p {
+    font-size: 12px;
+    color: rgba(244,244,245,0.55);
+    text-align: center;
+    line-height: 1.5;
+    max-width: 240px;
+  }
+  .pair-cta-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    margin-top: 6px;
+  }
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: #fbbf24;
+    color: #0a0a0c;
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    box-shadow: 0 0 16px rgba(251,191,36,0.3);
+    transition: filter 0.15s;
+  }
+  .btn-primary:hover { filter: brightness(1.1); }
+
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.04);
+    color: #f4f4f5;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.08); }
+
+  /* ── Send file CTA (Files tab) ─────────────────────────────── */
+  .send-file-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, rgba(251,191,36,0.12), rgba(251,191,36,0.04));
+    border: 1px solid rgba(251,191,36,0.28);
+    border-radius: 14px;
+    cursor: pointer;
+    font-family: inherit;
+    color: inherit;
+    text-align: left;
+    transition: background 0.15s, border-color 0.15s;
+    box-shadow: 0 0 18px rgba(251,191,36,0.08);
+  }
+  .send-file-btn:hover {
+    background: linear-gradient(135deg, rgba(251,191,36,0.18), rgba(251,191,36,0.06));
+    border-color: rgba(251,191,36,0.45);
+  }
+  .send-file-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: rgba(251,191,36,0.18);
+    border: 1px solid rgba(251,191,36,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .send-file-body { flex: 1; }
+  .send-file-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #f4f4f5;
+    letter-spacing: -0.005em;
+  }
+  .send-file-sub {
+    font-size: 11px;
+    color: rgba(244,244,245,0.5);
+    margin-top: 2px;
+  }
+
+  /* ── Device picker bottom sheet ────────────────────────────── */
+  .picker-preview {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px;
+    margin-bottom: 14px;
+  }
+  .picker-preview-thumb {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .picker-preview-meta { flex: 1; min-width: 0; }
+  .picker-preview-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: #f4f4f5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .picker-preview-size {
+    font-size: 10px;
+    color: rgba(244,244,245,0.4);
+    margin-top: 2px;
+  }
+
+  .picker-section-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(244,244,245,0.4);
+    padding: 0 4px 6px;
+  }
+
+  .pick-row {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 11px 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    border: 1px solid transparent;
+    margin-bottom: 4px;
+  }
+  .pick-row.broadcast {
+    background: rgba(251,191,36,0.1);
+    border-color: rgba(251,191,36,0.22);
+  }
+  .pick-row.broadcast:hover {
+    background: rgba(251,191,36,0.16);
+    border-color: rgba(251,191,36,0.38);
+  }
+  .pick-row.device {
+    background: rgba(255,255,255,0.04);
+    border-color: rgba(255,255,255,0.08);
+  }
+  .pick-row.device:hover {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.15);
+  }
+  .pick-row.device.focused {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(251,191,36,0.4);
+    box-shadow: 0 0 0 1px rgba(251,191,36,0.2) inset;
+  }
+  .pick-row-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .pick-row-icon.broadcast { background: rgba(251,191,36,0.14); border: 1px solid rgba(251,191,36,0.25); }
+  .pick-row-icon.android   { background: rgba(52,211,153,0.12);  border: 1px solid rgba(52,211,153,0.22); }
+  .pick-row-icon.windows   { background: rgba(96,165,250,0.12);  border: 1px solid rgba(96,165,250,0.22); }
+  .pick-row-text { flex: 1; min-width: 0; }
+  .pick-row-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: #f4f4f5;
+    line-height: 1.3;
+  }
+  .pick-row-meta {
+    font-size: 10px;
+    color: rgba(244,244,245,0.45);
+    margin-top: 2px;
+    text-transform: capitalize;
+  }
+  .pick-row-arrow {
+    color: rgba(244,244,245,0.25);
+    flex-shrink: 0;
+  }
+
+  /* ── QR Display Sheet ──────────────────────────────────────── */
+  .sheet-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    z-index: 70;
+  }
+
+  .sheet {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(180deg, rgba(24,24,27,1), rgba(15,15,17,1));
+    border-top: 1px solid rgba(255,255,255,0.08);
+    border-radius: 24px 24px 0 0;
+    padding: 8px 22px 28px;
+    z-index: 71;
+    box-shadow: 0 -24px 60px rgba(0,0,0,0.6);
+  }
+
+  .sheet-handle {
+    width: 36px;
+    height: 4px;
+    background: rgba(244,244,245,0.2);
+    border-radius: 999px;
+    margin: 6px auto 12px;
+  }
+
+  .sheet-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #f4f4f5;
+    text-align: center;
+    letter-spacing: -0.01em;
+  }
+  .sheet-sub {
+    font-size: 12px;
+    color: rgba(244,244,245,0.55);
+    text-align: center;
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+
+  /* QR code (SVG generated visually) */
+  .qr-wrap {
+    margin: 18px auto 14px;
+    padding: 14px;
+    background: #ffffff;
+    border-radius: 14px;
+    width: fit-content;
+    box-shadow: 0 0 32px rgba(251,191,36,0.12);
+  }
+  .qr-code {
+    width: 200px;
+    height: 200px;
+    display: block;
+  }
+
+  .qr-room-info {
+    margin: 0 auto 14px;
+    padding: 10px 14px;
+    background: rgba(24,24,27,0.8);
+    border: 1px solid rgba(42,42,46,0.9);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: fit-content;
+    max-width: 100%;
+  }
+  .qr-room-info-text { display: flex; flex-direction: column; gap: 1px; }
+  .qr-room-info-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(244,244,245,0.4);
+  }
+  .qr-room-info-value {
+    font-family: 'SF Mono', 'Cascadia Code', Consolas, monospace;
+    font-size: 11px;
+    color: #f4f4f5;
+  }
+
+  /* ── QR Scanner ────────────────────────────────────────────── */
+  .scanner-view {
+    flex: 1;
+    position: relative;
+    background:
+      radial-gradient(ellipse at 30% 20%, rgba(60,90,100,0.6) 0%, transparent 50%),
+      radial-gradient(ellipse at 70% 80%, rgba(40,60,80,0.5) 0%, transparent 50%),
+      #0a0a0c;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .scanner-darken {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, transparent 0%, transparent 35%, rgba(0,0,0,0.65) 60%);
+  }
+
+  .viewfinder {
+    width: 230px;
+    height: 230px;
+    border-radius: 22px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .viewfinder::before,
+  .viewfinder::after,
+  .viewfinder > .corner {
+    content: "";
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border: 3px solid #fbbf24;
+    box-shadow: 0 0 12px rgba(251,191,36,0.5);
+  }
+  .viewfinder::before {
+    top: -2px; left: -2px;
+    border-right: none; border-bottom: none;
+    border-radius: 14px 0 0 0;
+  }
+  .viewfinder::after {
+    top: -2px; right: -2px;
+    border-left: none; border-bottom: none;
+    border-radius: 0 14px 0 0;
+  }
+  .viewfinder .corner.bl {
+    bottom: -2px; left: -2px;
+    border-right: none; border-top: none;
+    border-radius: 0 0 0 14px;
+  }
+  .viewfinder .corner.br {
+    bottom: -2px; right: -2px;
+    border-left: none; border-top: none;
+    border-radius: 0 0 14px 0;
+  }
+
+  /* Scan beam */
+  .scan-beam {
+    position: absolute;
+    left: 6px; right: 6px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #fbbf24, transparent);
+    box-shadow: 0 0 12px #fbbf24, 0 0 24px rgba(251,191,36,0.6);
+    top: 50%;
+    animation: scan 2.4s ease-in-out infinite;
+  }
+  @keyframes scan {
+    0%, 100% { top: 12%; }
+    50% { top: 88%; }
+  }
+
+  .scanner-hint {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 18px;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 999px;
+    font-size: 12px;
+    color: rgba(244,244,245,0.85);
+    z-index: 3;
+  }
+
+  /* ── Phone-internal scrollable hides — preserved layout ───── */
+  .content::-webkit-scrollbar { display: none; }
+
+  /* ── Annotation under each frame ───────────────────────────── */
+  .annotation {
+    font-size: 11px;
+    color: rgba(244,244,245,0.4);
+    text-align: center;
+    max-width: 320px;
+    line-height: 1.55;
+  }
+  .annotation b { color: rgba(244,244,245,0.7); font-weight: 600; }
+
+  .divider {
+    width: 100%;
+    max-width: 1000px;
+    height: 1px;
+    background: rgba(255,255,255,0.05);
+    margin: 8px 0;
+  }
+
+  /* ── Theming helpers ─────────────────────────────────────── */
+  .text-amber { color: #fbbf24; }
+  .text-green { color: #34d399; }
+  .text-blue  { color: #60a5fa; }
+  .text-sky   { color: #38bdf8; }
+  .text-dim   { color: rgba(244,244,245,0.55); }
+
+  svg { display: block; }
+</style>
+</head>
+<body>
+
+<h1>LiveC · Android UI Mockup</h1>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION 1 — Primary tabs (Devices, Clipboard, Files)
+══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-label">Primary screens · Bottom tabs</div>
+
+  <div class="row">
+
+    <!-- ────────── DEVICES TAB ────────── -->
+    <div class="frame-stack">
+      <div class="frame-caption">Devices</div>
+      <div class="phone">
+        <div class="phone-surface">
+          <div class="status-bar">
+            <span>9:41</span>
+            <div class="status-icons">
+              <svg width="14" height="10" viewBox="0 0 18 12" fill="currentColor"><path d="M1 8h2v3H1zM5 6h2v5H5zM9 4h2v7H9zM13 2h2v9h-2z"/></svg>
+              <svg width="14" height="10" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 10.5l4.5-4.5a6.4 6.4 0 0 0-9 0L8 10.5z"/></svg>
+              <svg width="20" height="10" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="2" width="20" height="8" rx="2"/><rect x="2.5" y="3.5" width="14" height="5" rx="0.6" fill="currentColor"/></svg>
+            </div>
+          </div>
+
+          <div class="top-bar">
+            <div class="top-bar-left">
+              <div class="logo-mark">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0a0a0c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+              </div>
+              <span class="logo-text">LiveC</span>
+            </div>
+            <div class="top-bar-right">
+              <div class="conn-chip online">
+                <span class="pulse-dot"></span>
+                Live
+              </div>
+              <div class="icon-btn" title="Show QR">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><line x1="14" y1="14" x2="14" y2="17"/><line x1="14" y1="20" x2="17" y2="20"/><line x1="17" y1="14" x2="17" y2="17"/><line x1="20" y1="17" x2="20" y2="20"/></svg>
+              </div>
+              <div class="icon-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="content">
+            <!-- Room banner (paired) -->
+            <div class="room-banner">
+              <div class="key-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+              </div>
+              <div class="room-banner-text">
+                <div class="room-banner-label">Room</div>
+                <div class="room-banner-id">#a4f8e2c1</div>
+              </div>
+              <div class="room-banner-action share">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h7v7"/></svg>
+                Share
+              </div>
+            </div>
+
+            <!-- Devices header -->
+            <div class="section-header">
+              <span>Devices</span>
+              <span class="count">2 connected</span>
+            </div>
+
+            <!-- Windows device -->
+            <div class="card">
+              <div class="card-icon blue">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              </div>
+              <div class="card-body">
+                <div class="card-title">Work Laptop</div>
+                <div class="card-meta">
+                  windows
+                  <span class="dot"></span>
+                  active now
+                </div>
+              </div>
+              <div class="card-status-dot"></div>
+            </div>
+
+            <!-- Another phone -->
+            <div class="card">
+              <div class="card-icon green">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+              </div>
+              <div class="card-body">
+                <div class="card-title">Galaxy S24</div>
+                <div class="card-meta">
+                  android
+                  <span class="dot"></span>
+                  via LAN
+                </div>
+              </div>
+              <div class="card-status-dot"></div>
+            </div>
+          </div>
+
+          <div class="bottom-nav">
+            <div class="nav-item active">
+              <div class="nav-icon-wrap">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="9" height="9" rx="1.5"/><rect x="13" y="3" width="9" height="9" rx="1.5"/><rect x="2" y="14" width="9" height="7" rx="1.5"/><rect x="13" y="14" width="9" height="7" rx="1.5"/></svg>
+              </div>
+              <span class="nav-label">Devices</span>
+            </div>
+            <div class="nav-item">
+              <div class="nav-icon-wrap">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+              </div>
+              <span class="nav-label">Clipboard</span>
+            </div>
+            <div class="nav-item">
+              <div class="nav-icon-wrap">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <span class="nav-label">Files</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="annotation">Top bar: connection chip, <b>Show QR</b>, settings. Room banner is paired-state; <b>Share</b> opens the QR sheet.</div>
+    </div>
+
+
+    <!-- ────────── CLIPBOARD TAB ────────── -->
+    <div class="frame-stack">
+      <div class="frame-caption">Clipboard</div>
+      <div class="phone">
+        <div class="phone-surface">
+          <div class="status-bar">
+            <span>9:41</span>
+            <div class="status-icons">
+              <svg width="14" height="10" viewBox="0 0 18 12" fill="currentColor"><path d="M1 8h2v3H1zM5 6h2v5H5zM9 4h2v7H9zM13 2h2v9h-2z"/></svg>
+              <svg width="20" height="10" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="2" width="20" height="8" rx="2"/><rect x="2.5" y="3.5" width="14" height="5" rx="0.6" fill="currentColor"/></svg>
+            </div>
+          </div>
+
+          <div class="top-bar">
+            <div class="top-bar-left">
+              <div class="logo-mark"></div>
+              <span class="logo-text">Clipboard</span>
+            </div>
+            <div class="top-bar-right">
+              <div class="conn-chip online">
+                <span class="pulse-dot"></span>
+                Live
+              </div>
+              <div class="icon-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><line x1="14" y1="14" x2="14" y2="17"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="content">
+            <div class="section-header">
+              <span>Clipboard</span>
+              <span class="count">12 items</span>
+            </div>
+
+            <!-- Image clip from remote -->
+            <div class="card" style="flex-direction:column;align-items:stretch;gap:8px;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div class="card-icon amber">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                </div>
+                <div class="card-body">
+                  <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+                    <span class="badge image">Image</span>
+                    <span class="badge remote">Remote</span>
+                  </div>
+                  <div class="card-meta">from Work Laptop · just now</div>
+                </div>
+              </div>
+              <div class="clip-image-preview">
+                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="rgba(251,191,36,0.5)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              </div>
+            </div>
+
+            <!-- Text clip remote -->
+            <div class="card" style="flex-direction:column;align-items:stretch;gap:6px;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div class="card-icon amber">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+                </div>
+                <div class="card-body">
+                  <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+                    <span class="badge remote">Remote</span>
+                    <span class="card-meta" style="margin:0;">2m ago</span>
+                  </div>
+                  <div class="card-meta">from Work Laptop</div>
+                </div>
+                <div class="icon-btn">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </div>
+              </div>
+              <div class="clip-text">https://github.com/anthropics/claude-code/issues/3214</div>
+            </div>
+
+            <!-- Text clip local -->
+            <div class="card" style="flex-direction:column;align-items:stretch;gap:6px;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div class="card-icon amber">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+                </div>
+                <div class="card-body">
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <span class="badge local">Local</span>
+                    <span class="card-meta" style="margin:0;">8m ago</span>
+                  </div>
+                </div>
+                <div class="icon-btn">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </div>
+              </div>
+              <div class="clip-text">The quick brown fox jumps over the lazy dog. This is a longer clip preview that wraps to multiple lines for readability.</div>
+            </div>
+          </div>
+
+          <div class="bottom-nav">
+            <div class="nav-item">
+              <div class="nav-icon-wrap">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="9" height="9" rx="1.5"/><rect x="13" y="3" width="9" height="9" rx="1.5"/><rect x="2" y="14" width="9" height="7" rx="1.5"/><rect x="13" y="14" width="9" height="7" rx="1.5"/></svg>
+              </div>
+              <span class="nav-label">Devices</span>
+            </div>
+            <div class="nav-item active">
+              <div class="nav-icon-wrap">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+              </div>
+              <span class="nav-label">Clipboard</span>
+            </div>
+            <div class="nav-item">
+              <div class="nav-icon-wrap">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <span class="nav-label">Files</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="annotation">Image clips show inline preview. Source badge (<b>Remote</b>/<b>Local</b>) and timestamp anchor each card.</div>
+    </div>
+
+
+    <!-- ────────── FILES TAB ────────── -->
+    <div class="frame-stack">
+      <div class="frame-caption">Files</div>
+      <div class="phone">
+        <div class="phone-surface">
+          <div class="status-bar">
+            <span>9:41</span>
+            <div class="status-icons">
+              <svg width="14" height="10" viewBox="0 0 18 12" fill="currentColor"><path d="M1 8h2v3H1zM5 6h2v5H5zM9 4h2v7H9zM13 2h2v9h-2z"/></svg>
+              <svg width="20" height="10" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="2" width="20" height="8" rx="2"/><rect x="2.5" y="3.5" width="14" height="5" rx="0.6" fill="currentColor"/></svg>
+            </div>
+          </div>
+
+          <div class="top-bar">
+            <div class="top-bar-left">
+              <div class="logo-mark"></div>
+              <span class="logo-text">Files</span>
+            </div>
+            <div class="top-bar-right">
+              <div class="conn-chip online">
+                <span class="pulse-dot"></span>
+                Live
+              </div>
+              <div class="icon-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><line x1="14" y1="14" x2="14" y2="17"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="content">
+            <!-- Send file CTA -->
+            <button class="send-file-btn">
+              <div class="send-file-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+              </div>
+              <div class="send-file-body">
+                <div class="send-file-title">Send a file</div>
+                <div class="send-file-sub">Pick from gallery, files or recents</div>
+              </div>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(244,244,245,0.5)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+
+            <div class="section-header">
+              <span>Transfers</span>
+              <span class="count">3 recent</span>
+            </div>
+
+            <!-- Incoming pending -->
+            <div class="card">
+              <div class="card-icon sky">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <div class="card-body">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <div class="direction incoming">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="19 12 12 19 5 12"/><line x1="12" y1="19" x2="12" y2="5"/></svg>
+                  </div>
+                  <div class="card-title" style="white-space:normal;">Design-review.pdf</div>
+                </div>
+                <div class="card-meta">
+                  2.4 MB
+                  <span class="dot"></span>
+                  Work Laptop
+                  <span class="dot"></span>
+                  <span class="pill pending">Pending</span>
+                </div>
+              </div>
+              <div class="card-action" title="Save">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              </div>
+            </div>
+
+            <!-- Outgoing uploading -->
+            <div class="card">
+              <div class="card-icon amber">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              </div>
+              <div class="card-body">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <div class="direction outgoing">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+                  </div>
+                  <div class="card-title" style="white-space:normal;">IMG_3421.HEIC</div>
+                </div>
+                <div class="card-meta">
+                  3.1 MB
+                  <span class="dot"></span>
+                  <span class="pill in-progress">↑ Uploading</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Done -->
+            <div class="card">
+              <div class="card-icon green">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 13 11 15 15 11"/></svg>
+              </div>
+              <div class="card-body">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <div class="direction incoming">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="19 12 12 19 5 12"/><line x1="12" y1="19" x2="12" y2="5"/></svg>
+                  </div>
+                  <div class="card-title" style="white-space:normal;">contract-final.docx</div>
+                </div>
+                <div class="card-meta">
+                  124 KB
+                  <span class="dot"></span>
+                  <span class="pill done">✓ Saved</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bottom-nav">
+            <div class="nav-item">
+              <div class="nav-icon-wrap">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="9" height="9" rx="1.5"/><rect x="13" y="3" width="9" height="9" rx="1.5"/><rect x="2" y="14" width="9" height="7" rx="1.5"/><rect x="13" y="14" width="9" height="7" rx="1.5"/></svg>
+              </div>
+              <span class="nav-label">Devices</span>
+            </div>
+            <div class="nav-item">
+              <div class="nav-icon-wrap">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+              </div>
+              <span class="nav-label">Clipboard</span>
+            </div>
+            <div class="nav-item active">
+              <div class="nav-icon-wrap">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <span class="nav-label">Files</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="annotation">Direction badge (↓ incoming / ↑ outgoing) + status pill (<b>Pending</b>, <b>Uploading</b>, <b>Saved</b>, etc.).</div>
+    </div>
+
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION 2 — QR Display Sheet (NEW)
+══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-label">Pairing · QR display (other devices scan this)</div>
+
+  <div class="row">
+
+    <!-- QR sheet -->
+    <div class="frame-stack">
+      <div class="frame-caption">Show QR · modal bottom sheet</div>
+      <div class="phone">
+        <div class="phone-surface">
+          <div class="status-bar">
+            <span>9:41</span>
+            <div class="status-icons">
+              <svg width="14" height="10" viewBox="0 0 18 12" fill="currentColor"><path d="M1 8h2v3H1zM5 6h2v5H5zM9 4h2v7H9zM13 2h2v9h-2z"/></svg>
+              <svg width="20" height="10" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="2" width="20" height="8" rx="2"/><rect x="2.5" y="3.5" width="14" height="5" rx="0.6" fill="currentColor"/></svg>
+            </div>
+          </div>
+
+          <div class="top-bar" style="opacity:0.5;">
+            <div class="top-bar-left">
+              <div class="logo-mark"></div>
+              <span class="logo-text">LiveC</span>
+            </div>
+            <div class="top-bar-right">
+              <div class="conn-chip online">
+                <span class="pulse-dot"></span>
+                Live
+              </div>
+            </div>
+          </div>
+
+          <!-- Dimmed content below sheet -->
+          <div style="flex:1;opacity:0.18;padding:14px;display:flex;flex-direction:column;gap:8px;">
+            <div class="room-banner"></div>
+            <div class="card" style="height:48px;"></div>
+            <div class="card" style="height:48px;"></div>
+          </div>
+
+          <!-- Sheet backdrop -->
+          <div class="sheet-backdrop"></div>
+
+          <!-- Sheet -->
+          <div class="sheet">
+            <div class="sheet-handle"></div>
+            <div class="sheet-title">Pair another device</div>
+            <div class="sheet-sub">Open LiveC on Windows or another Android and scan this code.</div>
+
+            <div class="qr-wrap">
+              <!-- Inline QR-ish SVG (decorative; real one is generated by ZXing) -->
+              <svg class="qr-code" viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg">
+                <rect width="25" height="25" fill="#ffffff"/>
+                <!-- finder patterns -->
+                <g fill="#0a0a0c">
+                  <rect x="0" y="0" width="7" height="7"/>
+                  <rect x="18" y="0" width="7" height="7"/>
+                  <rect x="0" y="18" width="7" height="7"/>
+                </g>
+                <g fill="#ffffff">
+                  <rect x="1" y="1" width="5" height="5"/>
+                  <rect x="19" y="1" width="5" height="5"/>
+                  <rect x="1" y="19" width="5" height="5"/>
+                </g>
+                <g fill="#0a0a0c">
+                  <rect x="2" y="2" width="3" height="3"/>
+                  <rect x="20" y="2" width="3" height="3"/>
+                  <rect x="2" y="20" width="3" height="3"/>
+                </g>
+                <!-- Module-like noise pattern (decorative) -->
+                <g fill="#0a0a0c">
+                  <rect x="8" y="0" width="1" height="1"/><rect x="10" y="0" width="1" height="1"/><rect x="13" y="0" width="1" height="1"/><rect x="15" y="0" width="1" height="1"/>
+                  <rect x="9" y="1" width="1" height="1"/><rect x="11" y="1" width="1" height="1"/><rect x="14" y="1" width="1" height="1"/>
+                  <rect x="8" y="2" width="1" height="1"/><rect x="12" y="2" width="1" height="1"/><rect x="13" y="2" width="1" height="1"/><rect x="16" y="2" width="1" height="1"/>
+                  <rect x="9" y="3" width="1" height="1"/><rect x="11" y="3" width="1" height="1"/><rect x="14" y="3" width="1" height="1"/><rect x="15" y="3" width="1" height="1"/>
+                  <rect x="8" y="4" width="1" height="1"/><rect x="10" y="4" width="1" height="1"/><rect x="13" y="4" width="1" height="1"/><rect x="16" y="4" width="1" height="1"/>
+                  <rect x="9" y="5" width="1" height="1"/><rect x="12" y="5" width="1" height="1"/><rect x="14" y="5" width="1" height="1"/>
+                  <rect x="11" y="6" width="1" height="1"/><rect x="13" y="6" width="1" height="1"/><rect x="15" y="6" width="1" height="1"/>
+
+                  <rect x="0" y="8" width="1" height="1"/><rect x="2" y="8" width="1" height="1"/><rect x="4" y="8" width="1" height="1"/><rect x="6" y="8" width="1" height="1"/><rect x="9" y="8" width="1" height="1"/><rect x="11" y="8" width="1" height="1"/><rect x="13" y="8" width="1" height="1"/><rect x="15" y="8" width="1" height="1"/><rect x="18" y="8" width="1" height="1"/><rect x="20" y="8" width="1" height="1"/><rect x="22" y="8" width="1" height="1"/><rect x="24" y="8" width="1" height="1"/>
+                  <rect x="1" y="9" width="1" height="1"/><rect x="3" y="9" width="1" height="1"/><rect x="5" y="9" width="1" height="1"/><rect x="8" y="9" width="1" height="1"/><rect x="10" y="9" width="1" height="1"/><rect x="14" y="9" width="1" height="1"/><rect x="17" y="9" width="1" height="1"/><rect x="19" y="9" width="1" height="1"/><rect x="21" y="9" width="1" height="1"/><rect x="23" y="9" width="1" height="1"/>
+                  <rect x="0" y="10" width="1" height="1"/><rect x="2" y="10" width="1" height="1"/><rect x="4" y="10" width="1" height="1"/><rect x="7" y="10" width="1" height="1"/><rect x="9" y="10" width="1" height="1"/><rect x="11" y="10" width="1" height="1"/><rect x="13" y="10" width="1" height="1"/><rect x="16" y="10" width="1" height="1"/><rect x="18" y="10" width="1" height="1"/><rect x="20" y="10" width="1" height="1"/><rect x="22" y="10" width="1" height="1"/><rect x="24" y="10" width="1" height="1"/>
+                  <rect x="1" y="11" width="1" height="1"/><rect x="3" y="11" width="1" height="1"/><rect x="6" y="11" width="1" height="1"/><rect x="8" y="11" width="1" height="1"/><rect x="10" y="11" width="1" height="1"/><rect x="12" y="11" width="1" height="1"/><rect x="15" y="11" width="1" height="1"/><rect x="17" y="11" width="1" height="1"/><rect x="19" y="11" width="1" height="1"/><rect x="21" y="11" width="1" height="1"/><rect x="23" y="11" width="1" height="1"/>
+                  <rect x="0" y="12" width="1" height="1"/><rect x="2" y="12" width="1" height="1"/><rect x="5" y="12" width="1" height="1"/><rect x="7" y="12" width="1" height="1"/><rect x="9" y="12" width="1" height="1"/><rect x="14" y="12" width="1" height="1"/><rect x="16" y="12" width="1" height="1"/><rect x="18" y="12" width="1" height="1"/><rect x="20" y="12" width="1" height="1"/><rect x="22" y="12" width="1" height="1"/><rect x="24" y="12" width="1" height="1"/>
+                  <rect x="1" y="13" width="1" height="1"/><rect x="3" y="13" width="1" height="1"/><rect x="4" y="13" width="1" height="1"/><rect x="6" y="13" width="1" height="1"/><rect x="8" y="13" width="1" height="1"/><rect x="11" y="13" width="1" height="1"/><rect x="13" y="13" width="1" height="1"/><rect x="15" y="13" width="1" height="1"/><rect x="17" y="13" width="1" height="1"/><rect x="19" y="13" width="1" height="1"/><rect x="21" y="13" width="1" height="1"/><rect x="23" y="13" width="1" height="1"/>
+                  <rect x="0" y="14" width="1" height="1"/><rect x="2" y="14" width="1" height="1"/><rect x="5" y="14" width="1" height="1"/><rect x="7" y="14" width="1" height="1"/><rect x="10" y="14" width="1" height="1"/><rect x="12" y="14" width="1" height="1"/><rect x="14" y="14" width="1" height="1"/><rect x="16" y="14" width="1" height="1"/><rect x="18" y="14" width="1" height="1"/><rect x="20" y="14" width="1" height="1"/><rect x="22" y="14" width="1" height="1"/><rect x="24" y="14" width="1" height="1"/>
+                  <rect x="1" y="15" width="1" height="1"/><rect x="3" y="15" width="1" height="1"/><rect x="6" y="15" width="1" height="1"/><rect x="9" y="15" width="1" height="1"/><rect x="11" y="15" width="1" height="1"/><rect x="13" y="15" width="1" height="1"/><rect x="15" y="15" width="1" height="1"/><rect x="17" y="15" width="1" height="1"/><rect x="19" y="15" width="1" height="1"/><rect x="21" y="15" width="1" height="1"/><rect x="23" y="15" width="1" height="1"/>
+                  <rect x="0" y="16" width="1" height="1"/><rect x="2" y="16" width="1" height="1"/><rect x="5" y="16" width="1" height="1"/><rect x="8" y="16" width="1" height="1"/><rect x="10" y="16" width="1" height="1"/><rect x="12" y="16" width="1" height="1"/><rect x="14" y="16" width="1" height="1"/><rect x="16" y="16" width="1" height="1"/><rect x="18" y="16" width="1" height="1"/><rect x="20" y="16" width="1" height="1"/><rect x="22" y="16" width="1" height="1"/><rect x="24" y="16" width="1" height="1"/>
+
+                  <rect x="8" y="18" width="1" height="1"/><rect x="11" y="18" width="1" height="1"/><rect x="13" y="18" width="1" height="1"/><rect x="15" y="18" width="1" height="1"/><rect x="17" y="18" width="1" height="1"/><rect x="19" y="18" width="1" height="1"/><rect x="21" y="18" width="1" height="1"/><rect x="23" y="18" width="1" height="1"/>
+                  <rect x="9" y="19" width="1" height="1"/><rect x="12" y="19" width="1" height="1"/><rect x="14" y="19" width="1" height="1"/><rect x="16" y="19" width="1" height="1"/><rect x="20" y="19" width="1" height="1"/><rect x="22" y="19" width="1" height="1"/>
+                  <rect x="10" y="20" width="1" height="1"/><rect x="13" y="20" width="1" height="1"/><rect x="15" y="20" width="1" height="1"/><rect x="17" y="20" width="1" height="1"/><rect x="19" y="20" width="1" height="1"/><rect x="21" y="20" width="1" height="1"/><rect x="24" y="20" width="1" height="1"/>
+                  <rect x="11" y="21" width="1" height="1"/><rect x="14" y="21" width="1" height="1"/><rect x="16" y="21" width="1" height="1"/><rect x="18" y="21" width="1" height="1"/><rect x="20" y="21" width="1" height="1"/><rect x="22" y="21" width="1" height="1"/>
+                  <rect x="8" y="22" width="1" height="1"/><rect x="10" y="22" width="1" height="1"/><rect x="13" y="22" width="1" height="1"/><rect x="15" y="22" width="1" height="1"/><rect x="17" y="22" width="1" height="1"/><rect x="19" y="22" width="1" height="1"/><rect x="21" y="22" width="1" height="1"/><rect x="24" y="22" width="1" height="1"/>
+                  <rect x="9" y="23" width="1" height="1"/><rect x="12" y="23" width="1" height="1"/><rect x="16" y="23" width="1" height="1"/><rect x="18" y="23" width="1" height="1"/><rect x="20" y="23" width="1" height="1"/><rect x="22" y="23" width="1" height="1"/>
+                  <rect x="11" y="24" width="1" height="1"/><rect x="14" y="24" width="1" height="1"/><rect x="17" y="24" width="1" height="1"/><rect x="19" y="24" width="1" height="1"/><rect x="21" y="24" width="1" height="1"/><rect x="23" y="24" width="1" height="1"/>
+                </g>
+              </svg>
+            </div>
+
+            <div class="qr-room-info">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+              <div class="qr-room-info-text">
+                <span class="qr-room-info-label">Room</span>
+                <span class="qr-room-info-value">#a4f8e2c1</span>
+              </div>
+            </div>
+
+            <button class="btn-ghost" style="width:100%;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
+              Share link instead
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="annotation">QR encodes <code style="font-size:10px;background:rgba(255,255,255,0.06);padding:1px 4px;border-radius:3px;">{ relayUrl, roomToken }</code> — same format Windows uses. Generated locally with ZXing.</div>
+    </div>
+
+
+    <!-- QR Scanner -->
+    <div class="frame-stack">
+      <div class="frame-caption">Scan QR · Pair this device</div>
+      <div class="phone">
+        <div class="phone-surface">
+          <div class="status-bar">
+            <span>9:41</span>
+            <div class="status-icons">
+              <svg width="14" height="10" viewBox="0 0 18 12" fill="currentColor"><path d="M1 8h2v3H1zM5 6h2v5H5zM9 4h2v7H9zM13 2h2v9h-2z"/></svg>
+              <svg width="20" height="10" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="2" width="20" height="8" rx="2"/><rect x="2.5" y="3.5" width="14" height="5" rx="0.6" fill="currentColor"/></svg>
+            </div>
+          </div>
+
+          <div class="top-bar">
+            <div class="top-bar-left">
+              <div class="icon-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              </div>
+              <span class="logo-text">Scan QR Code</span>
+            </div>
+            <div class="top-bar-right"></div>
+          </div>
+
+          <div class="scanner-view">
+            <div class="scanner-darken"></div>
+            <div class="viewfinder">
+              <div class="corner bl"></div>
+              <div class="corner br"></div>
+              <div class="scan-beam"></div>
+            </div>
+            <div class="scanner-hint">
+              Point at the QR code in LiveC
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="annotation">Amber viewfinder with animated scan beam. Auto-pair on detection — no confirm step.</div>
+    </div>
+
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION 2.5 — Device picker (after Send file)
+══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-label">Send flow · Device picker modal</div>
+
+  <div class="row">
+
+    <!-- Picker — file selected, ready to choose target -->
+    <div class="frame-stack">
+      <div class="frame-caption">Step 1 · Pick recipient</div>
+      <div class="phone">
+        <div class="phone-surface">
+          <div class="status-bar">
+            <span>9:41</span>
+            <div class="status-icons">
+              <svg width="14" height="10" viewBox="0 0 18 12" fill="currentColor"><path d="M1 8h2v3H1zM5 6h2v5H5zM9 4h2v7H9zM13 2h2v9h-2z"/></svg>
+              <svg width="20" height="10" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="2" width="20" height="8" rx="2"/><rect x="2.5" y="3.5" width="14" height="5" rx="0.6" fill="currentColor"/></svg>
+            </div>
+          </div>
+
+          <div class="top-bar" style="opacity:0.5;">
+            <div class="top-bar-left">
+              <div class="logo-mark"></div>
+              <span class="logo-text">Files</span>
+            </div>
+            <div class="top-bar-right">
+              <div class="conn-chip online"><span class="pulse-dot"></span>Live</div>
+            </div>
+          </div>
+
+          <!-- Dimmed Files tab in background -->
+          <div style="flex:1;opacity:0.18;padding:14px;display:flex;flex-direction:column;gap:8px;">
+            <div class="send-file-btn" style="height:62px;"></div>
+            <div class="card" style="height:64px;"></div>
+            <div class="card" style="height:64px;"></div>
+          </div>
+
+          <div class="sheet-backdrop"></div>
+
+          <div class="sheet" style="padding-bottom:22px;">
+            <div class="sheet-handle"></div>
+            <div class="sheet-title">Send to…</div>
+            <div class="sheet-sub" style="margin-bottom:14px;">Pick a device or broadcast to the room</div>
+
+            <!-- File preview -->
+            <div class="picker-preview">
+              <div class="picker-preview-thumb">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(251,191,36,0.6)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <div class="picker-preview-meta">
+                <div class="picker-preview-name">Design-spec-v4.pdf</div>
+                <div class="picker-preview-size">2.4 MB · PDF</div>
+              </div>
+              <span class="badge image" style="background:rgba(251,191,36,0.12);color:#fbbf24;border-color:rgba(251,191,36,0.3);">1 file</span>
+            </div>
+
+            <div class="picker-section-label">Recipients</div>
+
+            <!-- All devices (broadcast) -->
+            <div class="pick-row broadcast">
+              <div class="pick-row-icon broadcast">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+              </div>
+              <div class="pick-row-text">
+                <div class="pick-row-name">All devices</div>
+                <div class="pick-row-meta">broadcast to room</div>
+              </div>
+              <div class="pick-row-arrow">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+            </div>
+
+            <!-- Windows device (focused/hovered) -->
+            <div class="pick-row device focused">
+              <div class="pick-row-icon windows">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              </div>
+              <div class="pick-row-text">
+                <div class="pick-row-name">Work Laptop</div>
+                <div class="pick-row-meta">windows · active now</div>
+              </div>
+              <div class="pick-row-arrow">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+            </div>
+
+            <!-- Android device -->
+            <div class="pick-row device">
+              <div class="pick-row-icon android">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+              </div>
+              <div class="pick-row-text">
+                <div class="pick-row-name">Galaxy S24</div>
+                <div class="pick-row-meta">android · via LAN</div>
+              </div>
+              <div class="pick-row-arrow">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+            </div>
+
+            <div class="picker-hint" style="margin-top:14px;text-align:center;font-size:10px;color:rgba(244,244,245,0.3);">Tap outside to cancel</div>
+          </div>
+        </div>
+      </div>
+      <div class="annotation">File preview chip pinned at top of sheet. <b>Broadcast</b> amber row is always first, then live devices grouped under "Recipients".</div>
+    </div>
+
+    <!-- Picker after tap — uploading state -->
+    <div class="frame-stack">
+      <div class="frame-caption">Step 2 · Uploading</div>
+      <div class="phone">
+        <div class="phone-surface">
+          <div class="status-bar">
+            <span>9:41</span>
+            <div class="status-icons">
+              <svg width="14" height="10" viewBox="0 0 18 12" fill="currentColor"><path d="M1 8h2v3H1zM5 6h2v5H5zM9 4h2v7H9zM13 2h2v9h-2z"/></svg>
+              <svg width="20" height="10" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="2" width="20" height="8" rx="2"/><rect x="2.5" y="3.5" width="14" height="5" rx="0.6" fill="currentColor"/></svg>
+            </div>
+          </div>
+
+          <div class="top-bar">
+            <div class="top-bar-left">
+              <div class="logo-mark"></div>
+              <span class="logo-text">Files</span>
+            </div>
+            <div class="top-bar-right">
+              <div class="conn-chip online"><span class="pulse-dot"></span>Live</div>
+              <div class="icon-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="content">
+            <button class="send-file-btn">
+              <div class="send-file-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+              </div>
+              <div class="send-file-body">
+                <div class="send-file-title">Send a file</div>
+                <div class="send-file-sub">Pick from gallery, files or recents</div>
+              </div>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(244,244,245,0.5)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+
+            <div class="section-header">
+              <span>Transfers</span>
+              <span class="count">just now</span>
+            </div>
+
+            <!-- Outgoing — uploading, animated -->
+            <div class="card" style="border-color:rgba(251,191,36,0.35);background:linear-gradient(135deg,rgba(251,191,36,0.05),rgba(24,24,27,0.7));">
+              <div class="card-icon amber">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <div class="card-body">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <div class="direction outgoing">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+                  </div>
+                  <div class="card-title" style="white-space:normal;">Design-spec-v4.pdf</div>
+                </div>
+                <div class="card-meta" style="margin-top:6px;">
+                  <span class="pill in-progress">↑ Uploading 67%</span>
+                  <span class="dot"></span>
+                  → Work Laptop
+                </div>
+                <!-- progress -->
+                <div style="margin-top:6px;height:3px;background:rgba(255,255,255,0.06);border-radius:999px;overflow:hidden;">
+                  <div style="height:100%;width:67%;background:linear-gradient(90deg,#fbbf24,#fde68a);box-shadow:0 0 8px rgba(251,191,36,0.6);border-radius:999px;"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card" style="opacity:0.6;">
+              <div class="card-icon green">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 13 11 15 15 11"/></svg>
+              </div>
+              <div class="card-body">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <div class="direction incoming"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="19 12 12 19 5 12"/><line x1="12" y1="19" x2="12" y2="5"/></svg></div>
+                  <div class="card-title">contract-final.docx</div>
+                </div>
+                <div class="card-meta">
+                  124 KB
+                  <span class="dot"></span>
+                  <span class="pill done">✓ Saved</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bottom-nav">
+            <div class="nav-item">
+              <div class="nav-icon-wrap"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="9" height="9" rx="1.5"/><rect x="13" y="3" width="9" height="9" rx="1.5"/><rect x="2" y="14" width="9" height="7" rx="1.5"/><rect x="13" y="14" width="9" height="7" rx="1.5"/></svg></div>
+              <span class="nav-label">Devices</span>
+            </div>
+            <div class="nav-item">
+              <div class="nav-icon-wrap"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></div>
+              <span class="nav-label">Clipboard</span>
+            </div>
+            <div class="nav-item active">
+              <div class="nav-icon-wrap"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+              <span class="nav-label">Files</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="annotation">Sheet dismisses → transfer card animates in at top with live progress bar + target device name.</div>
+    </div>
+
+    <!-- Picker — no devices fallback -->
+    <div class="frame-stack">
+      <div class="frame-caption">Edge case · 0 devices in room</div>
+      <div class="phone">
+        <div class="phone-surface">
+          <div class="status-bar">
+            <span>9:41</span>
+            <div class="status-icons">
+              <svg width="14" height="10" viewBox="0 0 18 12" fill="currentColor"><path d="M1 8h2v3H1zM5 6h2v5H5zM9 4h2v7H9zM13 2h2v9h-2z"/></svg>
+              <svg width="20" height="10" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="2" width="20" height="8" rx="2"/><rect x="2.5" y="3.5" width="14" height="5" rx="0.6" fill="currentColor"/></svg>
+            </div>
+          </div>
+
+          <div class="top-bar" style="opacity:0.5;">
+            <div class="top-bar-left">
+              <div class="logo-mark"></div>
+              <span class="logo-text">Files</span>
+            </div>
+            <div class="top-bar-right">
+              <div class="conn-chip online"><span class="pulse-dot"></span>Live</div>
+            </div>
+          </div>
+
+          <div style="flex:1;opacity:0.18;padding:14px;display:flex;flex-direction:column;gap:8px;">
+            <div class="send-file-btn" style="height:62px;"></div>
+          </div>
+
+          <div class="sheet-backdrop"></div>
+
+          <div class="sheet" style="padding-bottom:22px;">
+            <div class="sheet-handle"></div>
+            <div class="sheet-title">No other devices</div>
+            <div class="sheet-sub" style="margin-bottom:18px;">Pair another device first to send files between them.</div>
+
+            <div class="picker-preview">
+              <div class="picker-preview-thumb">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(251,191,36,0.6)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <div class="picker-preview-meta">
+                <div class="picker-preview-name">Design-spec-v4.pdf</div>
+                <div class="picker-preview-size">2.4 MB · PDF</div>
+              </div>
+            </div>
+
+            <button class="btn-primary" style="width:100%;margin-bottom:8px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              Show my QR
+            </button>
+            <button class="btn-ghost" style="width:100%;">Cancel</button>
+          </div>
+        </div>
+      </div>
+      <div class="annotation">When room is empty, picker pivots to a pairing prompt rather than showing an empty list.</div>
+    </div>
+
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION 3 — Unpaired CTA + Empty states
+══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-label">First run · Empty states</div>
+
+  <div class="row">
+
+    <!-- Unpaired CTA -->
+    <div class="frame-stack">
+      <div class="frame-caption">First launch · Pair this device</div>
+      <div class="phone">
+        <div class="phone-surface">
+          <div class="status-bar">
+            <span>9:41</span>
+            <div class="status-icons">
+              <svg width="14" height="10" viewBox="0 0 18 12" fill="currentColor"><path d="M1 8h2v3H1zM5 6h2v5H5zM9 4h2v7H9zM13 2h2v9h-2z"/></svg>
+              <svg width="20" height="10" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="2" width="20" height="8" rx="2"/><rect x="2.5" y="3.5" width="14" height="5" rx="0.6" fill="currentColor"/></svg>
+            </div>
+          </div>
+
+          <div class="top-bar">
+            <div class="top-bar-left">
+              <div class="logo-mark"></div>
+              <span class="logo-text">LiveC</span>
+            </div>
+            <div class="top-bar-right">
+              <div class="conn-chip offline">
+                <span class="pulse-dot" style="animation:none;"></span>
+                Offline
+              </div>
+              <div class="icon-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="content">
+            <div class="pair-cta">
+              <div class="pair-cta-icon-wrap">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><line x1="14" y1="14" x2="14" y2="17"/><line x1="14" y1="20" x2="17" y2="20"/><line x1="17" y1="14" x2="17" y2="17"/><line x1="20" y1="17" x2="20" y2="20"/></svg>
+              </div>
+              <h2>Pair this device</h2>
+              <p>Connect your phone to a LiveC room to start syncing clipboards & files.</p>
+              <div class="pair-cta-buttons">
+                <button class="btn-primary">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7h2v2H7zM15 7h2v2h-2zM7 15h2v2H7zM13 13h2M15 15h2M13 17h2M17 17h2"/></svg>
+                  Scan QR Code
+                </button>
+                <button class="btn-ghost">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                  Show my QR
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="bottom-nav">
+            <div class="nav-item active">
+              <div class="nav-icon-wrap">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="9" height="9" rx="1.5"/><rect x="13" y="3" width="9" height="9" rx="1.5"/><rect x="2" y="14" width="9" height="7" rx="1.5"/><rect x="13" y="14" width="9" height="7" rx="1.5"/></svg>
+              </div>
+              <span class="nav-label">Devices</span>
+            </div>
+            <div class="nav-item" style="opacity:0.4;">
+              <div class="nav-icon-wrap">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+              </div>
+              <span class="nav-label">Clipboard</span>
+            </div>
+            <div class="nav-item" style="opacity:0.4;">
+              <div class="nav-icon-wrap">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <span class="nav-label">Files</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="annotation">Two clear paths: <b>scan</b> someone's QR, or <b>show</b> ours so they scan us. Symmetric pairing.</div>
+    </div>
+
+    <!-- Empty clipboard -->
+    <div class="frame-stack">
+      <div class="frame-caption">Empty clipboard · paired but quiet</div>
+      <div class="phone">
+        <div class="phone-surface">
+          <div class="status-bar">
+            <span>9:41</span>
+            <div class="status-icons">
+              <svg width="14" height="10" viewBox="0 0 18 12" fill="currentColor"><path d="M1 8h2v3H1zM5 6h2v5H5zM9 4h2v7H9zM13 2h2v9h-2z"/></svg>
+              <svg width="20" height="10" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="2" width="20" height="8" rx="2"/><rect x="2.5" y="3.5" width="14" height="5" rx="0.6" fill="currentColor"/></svg>
+            </div>
+          </div>
+
+          <div class="top-bar">
+            <div class="top-bar-left">
+              <div class="logo-mark"></div>
+              <span class="logo-text">Clipboard</span>
+            </div>
+            <div class="top-bar-right">
+              <div class="conn-chip online">
+                <span class="pulse-dot"></span>
+                Live
+              </div>
+            </div>
+          </div>
+
+          <div class="content" style="justify-content:center;align-items:center;">
+            <div class="empty">
+              <div class="empty-icon">
+                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+              </div>
+              <div class="empty-title">Nothing copied yet</div>
+              <div class="empty-sub">Copy anything on a paired device and it'll appear here.</div>
+            </div>
+          </div>
+
+          <div class="bottom-nav">
+            <div class="nav-item">
+              <div class="nav-icon-wrap">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="9" height="9" rx="1.5"/><rect x="13" y="3" width="9" height="9" rx="1.5"/><rect x="2" y="14" width="9" height="7" rx="1.5"/><rect x="13" y="14" width="9" height="7" rx="1.5"/></svg>
+              </div>
+              <span class="nav-label">Devices</span>
+            </div>
+            <div class="nav-item active">
+              <div class="nav-icon-wrap">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+              </div>
+              <span class="nav-label">Clipboard</span>
+            </div>
+            <div class="nav-item">
+              <div class="nav-icon-wrap">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <span class="nav-label">Files</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="annotation">Quiet empty state — no scary "0 items" framing. Reassuring connection chip stays at top.</div>
+    </div>
+
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION 4 — Component reference
+══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-label">Component reference</div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:18px;max-width:900px;justify-content:center;">
+
+    <!-- Connection chips -->
+    <div style="background:rgba(24,24,27,0.5);border:1px solid rgba(42,42,46,0.7);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:240px;">
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(244,244,245,0.4);">Connection chip</div>
+      <div class="conn-chip online" style="align-self:flex-start;">
+        <span class="pulse-dot"></span>
+        Live
+      </div>
+      <div class="conn-chip offline" style="align-self:flex-start;">
+        <span class="pulse-dot" style="animation:none;"></span>
+        Offline
+      </div>
+    </div>
+
+    <!-- Status pills -->
+    <div style="background:rgba(24,24,27,0.5);border:1px solid rgba(42,42,46,0.7);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:8px;min-width:240px;">
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(244,244,245,0.4);">Transfer status pills</div>
+      <span class="pill pending" style="align-self:flex-start;">Pending</span>
+      <span class="pill in-progress" style="align-self:flex-start;">↑ Uploading</span>
+      <span class="pill in-progress" style="align-self:flex-start;">↓ Downloading</span>
+      <span class="pill done" style="align-self:flex-start;">✓ Saved</span>
+      <span class="pill error" style="align-self:flex-start;">⚠ Failed</span>
+    </div>
+
+    <!-- Source badges -->
+    <div style="background:rgba(24,24,27,0.5);border:1px solid rgba(42,42,46,0.7);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:8px;min-width:240px;">
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(244,244,245,0.4);">Source badges</div>
+      <span class="badge local" style="align-self:flex-start;">Local</span>
+      <span class="badge remote" style="align-self:flex-start;">Remote</span>
+      <span class="badge image" style="align-self:flex-start;">Image</span>
+    </div>
+
+    <!-- Color tokens -->
+    <div style="background:rgba(24,24,27,0.5);border:1px solid rgba(42,42,46,0.7);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:6px;min-width:240px;">
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(244,244,245,0.4);margin-bottom:4px;">Palette</div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:rgba(244,244,245,0.7);"><span style="width:18px;height:18px;border-radius:5px;background:#09090b;border:1px solid #2a2a2e;"></span>bg-base #09090b</div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:rgba(244,244,245,0.7);"><span style="width:18px;height:18px;border-radius:5px;background:#18181b;"></span>bg-surface #18181b</div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:rgba(244,244,245,0.7);"><span style="width:18px;height:18px;border-radius:5px;background:#fbbf24;"></span>amber #fbbf24</div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:rgba(244,244,245,0.7);"><span style="width:18px;height:18px;border-radius:5px;background:#34d399;"></span>green #34d399</div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:rgba(244,244,245,0.7);"><span style="width:18px;height:18px;border-radius:5px;background:#38bdf8;"></span>sky #38bdf8</div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:rgba(244,244,245,0.7);"><span style="width:18px;height:18px;border-radius:5px;background:#60a5fa;"></span>blue #60a5fa</div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:rgba(244,244,245,0.7);"><span style="width:18px;height:18px;border-radius:5px;background:#fb7185;"></span>rose #fb7185</div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

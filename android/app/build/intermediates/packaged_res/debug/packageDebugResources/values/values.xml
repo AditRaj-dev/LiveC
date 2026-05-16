@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">LiveC</string>
+    <string name="files_channel_name">File Transfers</string>
+    <string name="service_channel_description">Keeps clipboard sync alive</string>
+    <string name="service_channel_name">LiveC Connection</string>
+    <style name="Theme.LiveC" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">#09090B</item>
+        <item name="android:navigationBarColor">#09090B</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

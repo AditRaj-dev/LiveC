@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">LiveC</string>
+    <string name="service_channel_name">LiveC Connection</string>
+    <string name="service_channel_description">Keeps clipboard sync alive</string>
+    <string name="files_channel_name">File Transfers</string>
+</resources>

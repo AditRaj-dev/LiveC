@@ -1,0 +1,77 @@
+[package]
+name = "desktop"
+version = "0.1.0"
+description = "A Tauri App"
+authors = ["you"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary
+# to make the lib name unique and wouldn't conflict with the bin name.
+# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+name = "desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-opener = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-single-instance = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+base64 = "0.22"
+image = { version = "0.25", default-features = false, features = ["png"] }
+
+# Async runtime — only the sub-features actually used, not "full"
+tokio = { version = "1", features = [
+    "rt-multi-thread",   # spawn_blocking, multi-threaded executor
+    "net",               # TcpListener / TcpStream for LAN server
+    "sync",              # mpsc, oneshot
+    "time",              # sleep, interval (heartbeat)
+    "io-util",           # AsyncRead/Write helpers for tungstenite
+    "macros",            # #[tokio::main]
+] }
+
+# WebSocket
+tokio-tungstenite = { version = "0.26", features = ["rustls-tls-webpki-roots"] }
+futures-util = "0.3"
+
+# HTTP
+reqwest = { version = "0.12", features = ["json", "multipart", "rustls-tls"] }
+mime_guess = "2"
+sha2 = "0.10"
+hex = "0.4"
+uuid = { version = "1", features = ["v4"] }
+dirs = "5"
+hostname = "0.4"
+lazy_static = "1"
+mdns-sd = "0.11"
+
+# Windows APIs
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.61", features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Dwm",
+    "Win32_System_DataExchange",
+    "Win32_System_Memory",
+    "Win32_System_Ole",
+    "Win32_System_Threading",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_WindowsAndMessaging",
+] }
+winreg = "0.52"
+
+# Cut peak rustc/LLVM memory during codegen — avoids OOM on lower-RAM hosts.
+# Stack traces still work; you just don't get full variable inspection.
+[profile.dev]
+debug = 0           # no debug info — saves ~40% of LLVM memory
+opt-level = 0
+incremental = true
+codegen-units = 16  # more units = smaller per-unit memory peaks
+
