@@ -63,4 +63,7 @@ dependencies {
 
     // QR code generation (display our own QR for other devices to scan)
     implementation("com.google.zxing:core:3.5.3")
+
+    // Ed25519 keypair generation (API 31+ not available; minSdk=26 requires BouncyCastle)
+    implementation("org.bouncycastle:bcprov-jdk18on:1.78")
 }

@@ -36,6 +36,11 @@ pub mod msg {
     pub const FILE_META: &str = "file_meta";
     pub const FILE_EXPIRED: &str = "file_expired";
     pub const FILES_CLEAR: &str = "files_clear";
+    pub const FILE_OFFER: &str = "file_offer";
+    pub const FILE_ACCEPT: &str = "file_accept";
+    pub const FILE_REJECT: &str = "file_reject";
+    pub const FILE_READY: &str = "file_ready";
+    pub const FILE_DONE: &str = "file_done";
     pub const PING: &str = "ping";
     pub const PONG: &str = "pong";
     pub const ACK: &str = "ack";
@@ -43,9 +48,13 @@ pub mod msg {
 
 // ── Limits ────────────────────────────────────────────────────────────────────
 pub mod limits {
-    pub const MAX_FILE_BYTES: u64 = 100 * 1024 * 1024;
+    pub const MAX_FILE_BYTES: u64 = 10 * 1024 * 1024 * 1024;        // 10 GB
     pub const MAX_TEXT_BYTES: usize = 1 * 1024 * 1024;
-    pub const FILE_TTL_MS: u64 = 90_000;
+    pub const FILE_TTL_MS: u64 = 7 * 24 * 60 * 60 * 1000;           // 7 days
+    pub const OFFER_TTL_MS: u64 = 24 * 60 * 60 * 1000;              // 24h
+    pub const OFFLINE_QUEUE_TTL_MS: u64 = 7 * 24 * 60 * 60 * 1000;  // 7 days
+    pub const OFFLINE_QUEUE_MAX_PER_DEVICE: usize = 200;
+    pub const CHUNK_SIZE: usize = 8 * 1024 * 1024;                  // 8 MB
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -72,7 +81,13 @@ impl Message {
         }
     }
 
-    pub fn device_join(device_id: &str, device_name: &str, room: &str, platform: &str) -> Self {
+    pub fn device_join(
+        device_id: &str,
+        device_name: &str,
+        room: &str,
+        platform: &str,
+        fingerprint: &str,
+    ) -> Self {
         Self::new(
             "device_join",
             device_id,
@@ -83,6 +98,7 @@ impl Message {
                 "deviceName": device_name,
                 "platform": platform,
                 "roomToken": room,
+                "fingerprint": fingerprint,
             }),
         )
     }

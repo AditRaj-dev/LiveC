@@ -14,6 +14,8 @@ export interface Device {
   label: string;
   platform: "windows" | "android" | "unknown";
   lastSeen: number;
+  /** Hex SHA-256-based device fingerprint (Phase 5). Empty for v0 peers. */
+  fingerprint?: string;
 }
 
 export interface RoomState {
@@ -22,7 +24,14 @@ export interface RoomState {
   devices: Device[];
 }
 
-export type TransferStatus = "pending" | "uploading" | "downloading" | "done" | "error";
+export type TransferStatus =
+  | "offer_pending"   // incoming offer awaiting accept/reject
+  | "pending"         // file available, user can download
+  | "uploading"       // upload in progress (sender side)
+  | "downloading"     // download in progress
+  | "done"            // complete
+  | "error"
+  | "rejected";       // offer was rejected
 
 export interface FileTransfer {
   id: string;
@@ -35,4 +44,8 @@ export interface FileTransfer {
   direction: "incoming" | "outgoing";
   savedPath?: string;
   errorMsg?: string;
+  /** For two-phase offers/transfers: the offerId, sender deviceId, and file UUIDs. */
+  offerId?: string;
+  senderDeviceId?: string;
+  fileIds?: string[];
 }

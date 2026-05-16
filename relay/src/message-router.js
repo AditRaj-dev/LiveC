@@ -1,6 +1,7 @@
 const roomManager = require('./room-manager');
 const offlineQueue = require('./offline-queue');
-const { BROADCAST } = require('./protocol');
+const transferManager = require('./transfer-manager');
+const { BROADCAST, MESSAGE_TYPES } = require('./protocol');
 
 class MessageRouter {
   handleMessage(ws, messageStr) {
@@ -25,6 +26,44 @@ class MessageRouter {
     }
 
     console.log(`[MessageRouter] Routing ${type} from ${from.slice(0,8)} to ${to}`);
+
+    // ── Two-phase transfer intercepts ────────────────────────────────────────
+
+    if (type === MESSAGE_TYPES.FILE_OFFER) {
+      // Register offer in state machine before routing so accept can look it up.
+      const { offerId, files } = payload || {};
+      if (offerId && Array.isArray(files)) {
+        transferManager.registerOffer(offerId, from, to, files, roomToken);
+      }
+      // Fall through to normal routing.
+
+    } else if (type === MESSAGE_TYPES.FILE_ACCEPT) {
+      // Enrich payload with per-file upload tokens before forwarding to sender.
+      const { offerId, fileIds } = payload || {};
+      if (offerId && Array.isArray(fileIds)) {
+        const uploadTokens = {};
+        for (const fileId of fileIds) {
+          const result = transferManager.acceptFile(offerId, fileId, from);
+          if (result) uploadTokens[fileId] = result.uploadToken;
+        }
+        messageObj = { ...messageObj, payload: { ...payload, uploadTokens } };
+        messageStr = JSON.stringify(messageObj);
+      }
+      // Fall through to route enriched message to sender.
+
+    } else if (type === MESSAGE_TYPES.FILE_REJECT) {
+      const { offerId } = payload || {};
+      if (offerId) transferManager.rejectOffer(offerId);
+      // Fall through to route to sender.
+
+    } else if (type === MESSAGE_TYPES.FILE_DONE) {
+      // Recipient confirmed download — delete file, no need to route.
+      const { offerId, fileId } = payload || {};
+      if (offerId && fileId) transferManager.markDone(offerId, fileId);
+      return;
+    }
+
+    // ── Standard routing ─────────────────────────────────────────────────────
 
     if (to === BROADCAST) {
       roomManager.broadcast(roomToken, from, messageObj);

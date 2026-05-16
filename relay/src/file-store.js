@@ -3,6 +3,7 @@ const { LIMITS, UPLOAD_FIELD_NAME } = require('./protocol');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const multer = require('multer');
+const { signDownloadUrl, verifyDownloadRequest } = require('./url-signer');
 
 const FILE_TTL_MS = LIMITS.FILE_TTL_MS;
 const CLEANUP_INTERVAL_MS = 30 * 1000;
@@ -77,7 +78,9 @@ module.exports = {
 
     const protocol = req.headers['x-forwarded-proto'] || req.protocol;
     const host = req.headers.host;
-    const downloadUrl = `${protocol}://${host}/download/${fileId}`;
+    const httpBase = `${protocol}://${host}`;
+    // Sign the URL — clients pass through unchanged via file_meta/file_ready.
+    const downloadUrl = signDownloadUrl(httpBase, fileId);
 
     console.log(`[FileStore] Uploaded: ${fileId} (${req.file.size} bytes) → ${req.file.originalname}`);
 
@@ -86,8 +89,15 @@ module.exports = {
 
   handleDownload: (req, res) => {
     const { fileId } = req.params;
-    const fileInfo = fileTracker.get(fileId);
 
+    // Verify the HMAC signature + expiry. Stateless — no per-file token storage.
+    const check = verifyDownloadRequest(fileId, req.query);
+    if (!check.ok) {
+      console.warn(`[FileStore] Download rejected for ${fileId}: ${check.reason}`);
+      return res.status(check.status).json({ error: check.reason });
+    }
+
+    const fileInfo = fileTracker.get(fileId);
     if (!fileInfo) {
       return res.status(404).json({ error: 'File not found or expired' });
     }
@@ -102,6 +112,12 @@ module.exports = {
         }
       }
     });
+  },
+
+  // Register a file that was uploaded via the two-phase PUT path so the
+  // existing /download/:fileId route can serve it.
+  registerFile: (fileId, diskPath) => {
+    fileTracker.set(fileId, { path: diskPath, uploadedAt: Date.now() });
   },
 
   handleDelete: (req, res) => {

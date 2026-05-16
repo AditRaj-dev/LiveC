@@ -22,7 +22,17 @@ object AppState {
     fun setConnected(value: Boolean) { _connected.value = value }
 
     fun upsertDevice(d: DeviceInfo) {
-        _devices.update { list -> if (list.any { it.id == d.id }) list else list + d }
+        _devices.update { list ->
+            val existing = list.find { it.id == d.id }
+            if (existing == null) {
+                list + d
+            } else if (existing.fingerprint.isEmpty() && d.fingerprint.isNotEmpty()) {
+                // Backfill fingerprint when a later device_join carries one (LAN-vs-relay race).
+                list.map { if (it.id == d.id) it.copy(fingerprint = d.fingerprint) else it }
+            } else {
+                list
+            }
+        }
     }
 
     fun removeDevice(id: String) {

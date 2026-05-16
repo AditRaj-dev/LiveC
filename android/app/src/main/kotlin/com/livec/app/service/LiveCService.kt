@@ -3,11 +3,15 @@ package com.livec.app.service
 import android.app.*
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
 import android.os.IBinder
+import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -20,18 +24,27 @@ import com.livec.app.data.*
 import com.livec.app.network.LanClient
 import com.livec.app.network.LanDiscovery
 import com.livec.app.network.RelayClient
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.io.IOException
+import java.io.RandomAccessFile
+import java.security.MessageDigest
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 
 private const val TAG = "LiveCService"
 private const val SERVICE_CHANNEL = "livec.service"
@@ -41,6 +54,17 @@ private const val NOTIF_ID = 1
 private const val EXTRA_SHARE_TEXT = "extra_share_text"
 private const val EXTRA_SHARE_FILE = "extra_share_file"
 private const val EXTRA_CLEAR_KIND = "extra_clear_kind"
+private const val EXTRA_ACCEPT_OFFER = "extra_accept_offer"
+private const val EXTRA_REJECT_OFFER = "extra_reject_offer"
+private const val EXTRA_ACCEPT_FILE_IDS = "extra_accept_file_ids"
+private const val EXTRA_SENDER_DEVICE_ID = "extra_sender_device_id"
+private const val EXTRA_FILE_DONE_OFFER = "extra_file_done_offer"
+private const val EXTRA_FILE_DONE_FILE  = "extra_file_done_file"
+
+private sealed class OfferAcceptResult {
+    data class Accepted(val uploadTokens: Map<String, String>) : OfferAcceptResult()
+    object Rejected : OfferAcceptResult()
+}
 
 /**
  * Foreground service: owns the WebSocket connection, clipboard listener,
@@ -59,6 +83,9 @@ class LiveCService : LifecycleService() {
 
     // SELF_WRITE guard — same pattern as Windows client
     private var selfWritePending = false
+
+    // Outbound offers awaiting file_accept/file_reject from the recipient.
+    private val pendingOffers = ConcurrentHashMap<String, CompletableDeferred<OfferAcceptResult>>()
 
     // Cross-transport dedup: same msg.id arriving via relay + LAN is processed once.
     private val seenIds = ArrayDeque<String>()
@@ -143,8 +170,8 @@ class LiveCService : LifecycleService() {
                 deviceId = cfg.deviceId
                 roomToken = cfg.roomToken
                 if (cfg.relayUrl.isNotBlank() && cfg.roomToken.isNotBlank()) {
-                    client.start(cfg.relayUrl, cfg.deviceId, cfg.deviceName, cfg.roomToken)
-                    startLanDiscovery(cfg.roomToken, cfg.deviceId, cfg.deviceName)
+                    client.start(cfg.relayUrl, cfg.deviceId, cfg.deviceName, cfg.roomToken, cfg.fingerprint)
+                    startLanDiscovery(cfg.roomToken, cfg.deviceId, cfg.deviceName, cfg.fingerprint)
                 } else {
                     client.stop()
                     lanClient.disconnect()
@@ -185,6 +212,33 @@ class LiveCService : LifecycleService() {
                 if (lanClient.isConnected()) lanClient.send(msg)
             }
         }
+        // User accepted an incoming file offer (from notification action)
+        intent?.getStringExtra(EXTRA_ACCEPT_OFFER)?.let { offerId ->
+            val fileIds = intent.getStringArrayExtra(EXTRA_ACCEPT_FILE_IDS)?.toList() ?: emptyList()
+            val senderDeviceId = intent.getStringExtra(EXTRA_SENDER_DEVICE_ID) ?: ""
+            if (roomToken.isNotEmpty() && senderDeviceId.isNotEmpty()) {
+                client.send(Message.fileAccept(deviceId, roomToken, offerId, fileIds, senderDeviceId))
+                AppState.updateTransfer(offerId) { copy(status = TransferItem.Status.DOWNLOADING) }
+                cancelOfferNotification(offerId)
+            }
+        }
+        // User rejected an incoming file offer (from notification action)
+        intent?.getStringExtra(EXTRA_REJECT_OFFER)?.let { offerId ->
+            val senderDeviceId = intent.getStringExtra(EXTRA_SENDER_DEVICE_ID) ?: ""
+            if (roomToken.isNotEmpty() && senderDeviceId.isNotEmpty()) {
+                client.send(Message.fileReject(deviceId, roomToken, offerId, senderDeviceId))
+            }
+            AppState.removeTransfer(offerId)
+            cancelOfferNotification(offerId)
+        }
+        // Download complete — let the relay drop the file immediately.
+        intent?.getStringExtra(EXTRA_FILE_DONE_OFFER)?.let { offerId ->
+            val fileId = intent.getStringExtra(EXTRA_FILE_DONE_FILE) ?: return@let
+            val senderDeviceId = intent.getStringExtra(EXTRA_SENDER_DEVICE_ID) ?: ""
+            if (roomToken.isNotEmpty() && senderDeviceId.isNotEmpty()) {
+                client.send(Message.fileDone(deviceId, roomToken, offerId, fileId, senderDeviceId))
+            }
+        }
         return START_STICKY
     }
 
@@ -196,7 +250,7 @@ class LiveCService : LifecycleService() {
         super.onDestroy()
     }
 
-    private fun startLanDiscovery(roomToken: String, deviceId: String, deviceName: String) {
+    private fun startLanDiscovery(roomToken: String, deviceId: String, deviceName: String, fingerprint: String) {
         lanDiscovery?.stop()
         lanDiscovery = LanDiscovery(
             context = applicationContext,
@@ -204,7 +258,7 @@ class LiveCService : LifecycleService() {
             deviceId = deviceId,
             onPeerFound = { host, port ->
                 Log.d("LiveCService", "LAN peer found: $host:$port")
-                lanClient.connect(host, port, deviceId, deviceName, roomToken)
+                lanClient.connect(host, port, deviceId, deviceName, roomToken, fingerprint)
             },
         ).also { it.start() }
     }
@@ -236,6 +290,7 @@ class LiveCService : LifecycleService() {
                         id = p.optString("deviceId"),
                         name = p.optString("deviceName", "Device"),
                         platform = p.optString("platform", "unknown"),
+                        fingerprint = p.optString("fingerprint", ""),
                     )
                 )
             }
@@ -272,19 +327,18 @@ class LiveCService : LifecycleService() {
                         try {
                             val bytes = android.util.Base64.decode(inlineData, android.util.Base64.DEFAULT)
                             val mime = msg.payload.optString("mimeType", "image/png")
-                            val ext = if (mime.contains("jpeg")) "jpg" else "png"
-                            val file = File(cacheDir, "livec_img_${System.currentTimeMillis()}.$ext")
-                            file.writeBytes(bytes)
-                            val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
-                            writeImageToClipboard(uri, mime)
-                            AppState.addClip(
-                                ClipItem(
-                                    kind = ClipItem.Kind.IMAGE,
-                                    downloadUrl = file.toURI().toString(),
-                                    source = ClipItem.Source.REMOTE,
-                                    from = msg.from,
+                            val uri = saveImageToMediaStore(bytes, mime)
+                            if (uri != null) {
+                                writeImageToClipboard(uri, mime)
+                                AppState.addClip(
+                                    ClipItem(
+                                        kind = ClipItem.Kind.IMAGE,
+                                        downloadUrl = uri.toString(),
+                                        source = ClipItem.Source.REMOTE,
+                                        from = msg.from,
+                                    )
                                 )
-                            )
+                            }
                         } catch (e: Exception) {
                             Log.e(TAG, "Failed to handle inline image: ${e.message}")
                         }
@@ -333,6 +387,103 @@ class LiveCService : LifecycleService() {
                 Log.d(TAG, "Remote files clear from ${msg.from.take(8)}")
                 AppState.clearTransfers()
             }
+            // ── Two-phase transfer messages ──────────────────────────────────
+            MessageType.FILE_OFFER -> {
+                val offerId = msg.payload.optString("offerId")
+                val filesArr = msg.payload.optJSONArray("files")
+                val fileCount = filesArr?.length() ?: 0
+                val firstName = filesArr?.optJSONObject(0)?.optString("name", "file") ?: "file"
+                val totalSize = (0 until fileCount).sumOf {
+                    filesArr?.optJSONObject(it)?.optLong("size", 0L) ?: 0L
+                }
+                val displayName = if (fileCount == 1) firstName else "$fileCount files"
+                val fileIds = (0 until fileCount).mapNotNull {
+                    filesArr?.optJSONObject(it)?.optString("fileId")
+                }
+
+                // Phase 5b: auto-accept from trusted quick-mode peers.
+                val senderFp = AppState.devices.value.find { it.id == msg.from }?.fingerprint ?: ""
+                lifecycleScope.launch {
+                    val isQuick = senderFp.isNotEmpty() && configStore.isQuickMode(senderFp)
+                    if (isQuick) {
+                        AppState.addTransfer(
+                            TransferItem(
+                                id = offerId,
+                                name = displayName,
+                                size = totalSize,
+                                downloadUrl = "",
+                                from = msg.from,
+                                status = TransferItem.Status.DOWNLOADING,
+                                direction = TransferItem.Direction.INCOMING,
+                                senderDeviceId = msg.from,
+                                offerFileIds = fileIds.joinToString(","),
+                                offerId = offerId,
+                            )
+                        )
+                        client.send(Message.fileAccept(deviceId, roomToken, offerId, fileIds, msg.from))
+                        Log.d(TAG, "Auto-accepted offer $offerId from quick-mode peer ${senderFp.take(8)}")
+                    } else {
+                        AppState.addTransfer(
+                            TransferItem(
+                                id = offerId,
+                                name = displayName,
+                                size = totalSize,
+                                downloadUrl = "",
+                                from = msg.from,
+                                status = TransferItem.Status.OFFER_PENDING,
+                                direction = TransferItem.Direction.INCOMING,
+                                senderDeviceId = msg.from,
+                                offerFileIds = fileIds.joinToString(","),
+                                offerId = offerId,
+                            )
+                        )
+                        postOfferNotification(offerId, displayName, msg.from, fileIds, msg.from)
+                    }
+                }
+            }
+            MessageType.FILE_ACCEPT -> {
+                // Our outbound offer was accepted by the recipient.
+                val offerId = msg.payload.optString("offerId")
+                val tokensObj = msg.payload.optJSONObject("uploadTokens")
+                val uploadTokens = tokensObj?.let { obj ->
+                    obj.keys().asSequence().associateWith { obj.optString(it) }
+                } ?: emptyMap()
+                pendingOffers.remove(offerId)
+                    ?.complete(OfferAcceptResult.Accepted(uploadTokens))
+                AppState.updateTransfer(offerId) { copy(status = TransferItem.Status.UPLOADING) }
+            }
+            MessageType.FILE_REJECT -> {
+                val offerId = msg.payload.optString("offerId")
+                pendingOffers.remove(offerId)
+                    ?.complete(OfferAcceptResult.Rejected)
+                AppState.updateTransfer(offerId) {
+                    copy(status = TransferItem.Status.ERROR, errorMsg = "Rejected")
+                }
+            }
+            MessageType.FILE_READY -> {
+                // File is uploaded and ready for download (we're the recipient).
+                val offerId = msg.payload.optString("offerId")
+                val fileId = msg.payload.optString("fileId")
+                val name = msg.payload.optString("name", "file")
+                val size = msg.payload.optLong("size", 0L)
+                val downloadUrl = msg.payload.optString("downloadUrl")
+                // Replace the offer_pending entry with a downloadable transfer.
+                AppState.removeTransfer(offerId)
+                AppState.addTransfer(
+                    TransferItem(
+                        id = fileId,
+                        name = name,
+                        size = size,
+                        downloadUrl = downloadUrl,
+                        from = msg.from,
+                        status = TransferItem.Status.PENDING,
+                        direction = TransferItem.Direction.INCOMING,
+                        senderDeviceId = msg.from,
+                        offerId = offerId,
+                    )
+                )
+                postFileNotification(name, msg.from)
+            }
         }
     }
 
@@ -346,13 +497,40 @@ class LiveCService : LifecycleService() {
         try {
             val bytes = OkHttpClient().newCall(Request.Builder().url(downloadUrl).build())
                 .execute().body?.bytes() ?: return@withContext
-            val ext = if (downloadUrl.contains("jpeg") || downloadUrl.contains("jpg")) "jpg" else "png"
-            val file = File(cacheDir, "livec_img_${System.currentTimeMillis()}.$ext")
-            file.writeBytes(bytes)
-            val uri = FileProvider.getUriForFile(this@LiveCService, "$packageName.fileprovider", file)
-            withContext(Dispatchers.Main) { writeImageToClipboard(uri, "image/png") }
+            val mime = if (downloadUrl.contains("jpeg") || downloadUrl.contains("jpg")) "image/jpeg" else "image/png"
+            val uri = saveImageToMediaStore(bytes, mime) ?: return@withContext
+            withContext(Dispatchers.Main) { writeImageToClipboard(uri, mime) }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to download image for clipboard: ${e.message}")
+        }
+    }
+
+    /**
+     * Write an image to MediaStore (Pictures/LiveC) so the returned content:// URI is
+     * globally readable by other apps' paste targets. FileProvider URIs only work for
+     * apps we explicitly grant — useless for the clipboard since we can't predict the
+     * paste target.
+     */
+    private fun saveImageToMediaStore(bytes: ByteArray, mime: String): Uri? {
+        val ext = if (mime.contains("jpeg")) "jpg" else "png"
+        val name = "LiveC_${System.currentTimeMillis()}.$ext"
+        val resolver = contentResolver
+        val values = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, name)
+            put(MediaStore.Images.Media.MIME_TYPE, mime)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/LiveC")
+            }
+        }
+        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: return null
+        return try {
+            resolver.openOutputStream(uri)?.use { it.write(bytes) }
+                ?: run { resolver.delete(uri, null, null); null }
+            uri
+        } catch (e: Exception) {
+            Log.e(TAG, "saveImageToMediaStore failed: ${e.message}")
+            try { resolver.delete(uri, null, null) } catch (_: Exception) {}
+            null
         }
     }
 
@@ -423,6 +601,240 @@ class LiveCService : LifecycleService() {
         nm.notify(name.hashCode(), notif)
     }
 
+    // ── File upload (two-phase + chunked TUS-subset) ──────────────────────────
+
+    private suspend fun uploadAndBroadcast(uri: Uri, target: String = BROADCAST) =
+        withContext(Dispatchers.IO) {
+            val cfg = configStore.get()
+            val httpBase = relayToHttpBase(cfg.relayUrl)
+            val cr = contentResolver
+
+            val name = cr.query(uri, null, null, null, null)?.use { c ->
+                val idx = c.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (c.moveToFirst() && idx >= 0) c.getString(idx) else null
+            } ?: uri.lastPathSegment ?: "file"
+            val mime = cr.getType(uri) ?: "application/octet-stream"
+
+            // ContentResolver streams aren't seekable — copy once to cache so we can
+            // hash AND chunk-upload without re-asking the provider.
+            val cacheFile = File(cacheDir, "upload_${System.currentTimeMillis()}_$name")
+            try {
+                cr.openInputStream(uri)?.use { input ->
+                    cacheFile.outputStream().use { output -> input.copyTo(output) }
+                } ?: run {
+                    Log.e(TAG, "Cannot read URI: $uri")
+                    return@withContext
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to stage upload", e)
+                cacheFile.delete()
+                return@withContext
+            }
+            val size = cacheFile.length()
+
+            val sha256Hex = try {
+                val md = MessageDigest.getInstance("SHA-256")
+                cacheFile.inputStream().use { input ->
+                    val buf = ByteArray(64 * 1024)
+                    while (true) {
+                        val n = input.read(buf)
+                        if (n <= 0) break
+                        md.update(buf, 0, n)
+                    }
+                }
+                md.digest().joinToString("") { "%02x".format(it) }
+            } catch (e: Exception) {
+                cacheFile.delete()
+                Log.e(TAG, "SHA-256 failed", e)
+                return@withContext
+            }
+
+            val offerId = UUID.randomUUID().toString()
+            val fileId  = UUID.randomUUID().toString()
+
+            val placeholder = TransferItem(
+                id = offerId,
+                name = name,
+                size = size,
+                downloadUrl = "",
+                from = cfg.deviceId,
+                status = TransferItem.Status.UPLOADING,
+                direction = TransferItem.Direction.OUTGOING,
+            )
+            AppState.addTransfer(placeholder)
+
+            val deferred = CompletableDeferred<OfferAcceptResult>()
+            pendingOffers[offerId] = deferred
+
+            val offerMsg = Message.fileOffer(
+                deviceId = cfg.deviceId,
+                roomToken = cfg.roomToken,
+                offerId = offerId,
+                files = listOf(
+                    Message.OfferFile(
+                        fileId = fileId, name = name, size = size,
+                        sha256 = sha256Hex, mimeType = mime,
+                    )
+                ),
+                target = target,
+            )
+            client.send(offerMsg)
+            // LAN fallback — defense against stale relay socket entries.
+            if (lanClient.isConnected()) lanClient.send(offerMsg)
+
+            val result = try {
+                withTimeout(300_000L) { deferred.await() }
+            } catch (e: TimeoutCancellationException) {
+                pendingOffers.remove(offerId)
+                cacheFile.delete()
+                Log.w(TAG, "Offer $offerId timed out")
+                AppState.updateTransfer(offerId) {
+                    copy(status = TransferItem.Status.ERROR, errorMsg = "Offer timed out")
+                }
+                return@withContext
+            }
+
+            when (result) {
+                is OfferAcceptResult.Rejected -> {
+                    cacheFile.delete()
+                    AppState.updateTransfer(offerId) {
+                        copy(status = TransferItem.Status.ERROR, errorMsg = "Rejected")
+                    }
+                    return@withContext
+                }
+                is OfferAcceptResult.Accepted -> {
+                    val token = result.uploadTokens[fileId] ?: run {
+                        cacheFile.delete()
+                        AppState.updateTransfer(offerId) {
+                            copy(status = TransferItem.Status.ERROR, errorMsg = "No upload token")
+                        }
+                        return@withContext
+                    }
+
+                    val patchUrl = "$httpBase/upload/$offerId/$fileId"
+                    try {
+                        chunkedUpload(cacheFile, patchUrl, token, size)
+                        AppState.updateTransfer(offerId) { copy(status = TransferItem.Status.DONE) }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Chunked upload failed", e)
+                        AppState.updateTransfer(offerId) {
+                            copy(status = TransferItem.Status.ERROR, errorMsg = e.message ?: "Upload failed")
+                        }
+                    } finally {
+                        cacheFile.delete()
+                    }
+                }
+            }
+        }
+
+    /** Stream `file` to `patchUrl` in CHUNK_SIZE pieces with HEAD-based resume. */
+    private fun chunkedUpload(file: File, patchUrl: String, token: String, totalSize: Long) {
+        val http = OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(120, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .build()
+        val chunkSize = Limits.CHUNK_SIZE
+        val maxAttempts = 5
+        val chunkBuf = ByteArray(chunkSize)
+        val patchMedia = "application/offset+octet-stream".toMediaType()
+        var offset = 0L
+        var attempts = 0
+
+        RandomAccessFile(file, "r").use { raf ->
+            while (offset < totalSize) {
+                raf.seek(offset)
+                val toRead = minOf(chunkSize.toLong(), totalSize - offset).toInt()
+                raf.readFully(chunkBuf, 0, toRead)
+                val body = chunkBuf.copyOf(toRead).toRequestBody(patchMedia)
+                val req = Request.Builder()
+                    .url(patchUrl)
+                    .addHeader("Authorization", "Bearer $token")
+                    .addHeader("Upload-Offset", offset.toString())
+                    .patch(body)
+                    .build()
+
+                try {
+                    http.newCall(req).execute().use { resp ->
+                        if (resp.isSuccessful) {
+                            offset += toRead
+                            attempts = 0
+                        } else {
+                            resp.header("Upload-Offset")?.toLongOrNull()?.let { offset = it }
+                            attempts++
+                            if (attempts >= maxAttempts) {
+                                throw IOException("PATCH failed after $attempts attempts: HTTP ${resp.code}")
+                            }
+                            Thread.sleep(500L * attempts)
+                        }
+                    }
+                } catch (e: IOException) {
+                    attempts++
+                    if (attempts >= maxAttempts) throw e
+                    // Ask server where it actually is, then retry from there.
+                    try {
+                        val headReq = Request.Builder()
+                            .url(patchUrl)
+                            .addHeader("Authorization", "Bearer $token")
+                            .head()
+                            .build()
+                        http.newCall(headReq).execute().use { r ->
+                            r.header("Upload-Offset")?.toLongOrNull()?.let { offset = it }
+                        }
+                    } catch (_: IOException) {
+                        // ignore; will retry at current offset
+                    }
+                    Thread.sleep(500L * attempts)
+                }
+            }
+        }
+    }
+
+    // ── Notifications ─────────────────────────────────────────────────────────
+
+    private fun postOfferNotification(
+        offerId: String,
+        displayName: String,
+        from: String,
+        fileIds: List<String>,
+        senderDeviceId: String,
+    ) {
+        val nm = getSystemService(NotificationManager::class.java)
+
+        val acceptIntent = PendingIntent.getService(
+            this, offerId.hashCode(),
+            Intent(this, LiveCService::class.java).apply {
+                putExtra(EXTRA_ACCEPT_OFFER, offerId)
+                putExtra(EXTRA_ACCEPT_FILE_IDS, fileIds.toTypedArray())
+                putExtra(EXTRA_SENDER_DEVICE_ID, senderDeviceId)
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        val rejectIntent = PendingIntent.getService(
+            this, offerId.hashCode() + 1,
+            Intent(this, LiveCService::class.java).apply {
+                putExtra(EXTRA_REJECT_OFFER, offerId)
+                putExtra(EXTRA_SENDER_DEVICE_ID, senderDeviceId)
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
+        val notif = NotificationCompat.Builder(this, FILES_CHANNEL)
+            .setContentTitle("File from ${from.take(8)}")
+            .setContentText(displayName)
+            .setSmallIcon(android.R.drawable.stat_sys_download)
+            .setAutoCancel(false)
+            .setColor(Color.parseColor("#FBBF24"))
+            .addAction(0, "Accept", acceptIntent)
+            .addAction(0, "Reject", rejectIntent)
+            .build()
+        nm.notify(offerId.hashCode(), notif)
+    }
+
+    private fun cancelOfferNotification(offerId: String) {
+        getSystemService(NotificationManager::class.java).cancel(offerId.hashCode())
+    }
+
     companion object {
         fun start(ctx: Context) {
             ctx.startForegroundService(Intent(ctx, LiveCService::class.java))
@@ -440,91 +852,37 @@ class LiveCService : LifecycleService() {
             ctx.startForegroundService(intent)
         }
 
-        /** Broadcast a clear message (clipboard_clear / files_clear) to all paired devices. */
         fun startWithClear(ctx: Context, kind: String) {
             val intent = Intent(ctx, LiveCService::class.java)
                 .putExtra(EXTRA_CLEAR_KIND, kind)
             ctx.startForegroundService(intent)
         }
-    }
 
-    // ── File upload ───────────────────────────────────────────────────────────
-
-    private suspend fun uploadAndBroadcast(uri: Uri) = withContext(Dispatchers.IO) {
-        val cfg = configStore.get()
-        val httpBase = relayToHttpBase(cfg.relayUrl)
-        val cr = contentResolver
-
-        // Resolve display name
-        val name = cr.query(uri, null, null, null, null)?.use { c ->
-            val idx = c.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-            if (c.moveToFirst() && idx >= 0) c.getString(idx) else null
-        } ?: uri.lastPathSegment ?: "file"
-
-        val mime = cr.getType(uri) ?: "application/octet-stream"
-        val bytes = cr.openInputStream(uri)?.use { it.readBytes() } ?: run {
-            Log.e(TAG, "Cannot read URI: $uri")
-            return@withContext
+        fun acceptOffer(ctx: Context, offerId: String, fileIds: List<String>, senderDeviceId: String) {
+            ctx.startForegroundService(
+                Intent(ctx, LiveCService::class.java)
+                    .putExtra(EXTRA_ACCEPT_OFFER, offerId)
+                    .putExtra(EXTRA_ACCEPT_FILE_IDS, fileIds.toTypedArray())
+                    .putExtra(EXTRA_SENDER_DEVICE_ID, senderDeviceId)
+            )
         }
 
-        // Add placeholder transfer
-        val placeholder = TransferItem(
-            id = "upload_${System.currentTimeMillis()}",
-            name = name,
-            size = bytes.size.toLong(),
-            downloadUrl = "",
-            from = cfg.deviceId,
-            status = TransferItem.Status.UPLOADING,
-            direction = TransferItem.Direction.OUTGOING,
-        )
-        AppState.addTransfer(placeholder)
-
-        try {
-            val body = MultipartBody.Builder()
-                .setType(MultipartBody.FORM)
-                .addFormDataPart(UPLOAD_FIELD_NAME, name, bytes.toRequestBody(mime.toMediaType()))
-                .addFormDataPart("roomToken", cfg.roomToken)
-                .addFormDataPart("deviceId", cfg.deviceId)
-                .build()
-
-            val req = Request.Builder().url("$httpBase${Paths.UPLOAD}").post(body).build()
-            val res = OkHttpClient().newCall(req).execute()
-
-            if (!res.isSuccessful) {
-                AppState.updateTransfer(placeholder.id) {
-                    copy(status = TransferItem.Status.ERROR, errorMsg = "HTTP ${res.code}")
-                }
-                return@withContext
-            }
-
-            val json = JSONObject(res.body!!.string())
-            val fileId = json.getString("fileId")
-            val downloadUrl = json.getString("downloadUrl")
-
-            // Broadcast file_meta to room via relay + LAN
-            val fileMeta = Message(
-                type = MessageType.FILE_META,
-                from = cfg.deviceId,
-                to = BROADCAST,
-                room = cfg.roomToken,
-                payload = JSONObject().apply {
-                    put("fileId", fileId)
-                    put("name", name)
-                    put("size", bytes.size.toLong())
-                    put("downloadUrl", downloadUrl)
-                },
+        fun rejectOffer(ctx: Context, offerId: String, senderDeviceId: String) {
+            ctx.startForegroundService(
+                Intent(ctx, LiveCService::class.java)
+                    .putExtra(EXTRA_REJECT_OFFER, offerId)
+                    .putExtra(EXTRA_SENDER_DEVICE_ID, senderDeviceId)
             )
-            client.send(fileMeta)
-            if (lanClient.isConnected()) lanClient.send(fileMeta)
+        }
 
-            AppState.updateTransfer(placeholder.id) {
-                copy(status = TransferItem.Status.DONE, downloadUrl = downloadUrl)
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Upload failed", e)
-            AppState.updateTransfer(placeholder.id) {
-                copy(status = TransferItem.Status.ERROR, errorMsg = e.message ?: "Upload failed")
-            }
+        /** Tell the relay a downloaded file can be deleted immediately. */
+        fun markFileDone(ctx: Context, offerId: String, fileId: String, senderDeviceId: String) {
+            ctx.startForegroundService(
+                Intent(ctx, LiveCService::class.java)
+                    .putExtra(EXTRA_FILE_DONE_OFFER, offerId)
+                    .putExtra(EXTRA_FILE_DONE_FILE, fileId)
+                    .putExtra(EXTRA_SENDER_DEVICE_ID, senderDeviceId)
+            )
         }
     }
 }

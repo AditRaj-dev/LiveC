@@ -219,66 +219,190 @@ async fn upload_screenshot(
     Ok(file_id)
 }
 
-/// Upload any file and send as file_meta to target device or broadcast.
+/// Compute SHA-256 + size of a file in a single streaming pass.
+async fn hash_file(path: &str) -> Result<(String, u64), String> {
+    use sha2::{Digest, Sha256};
+    use tokio::io::AsyncReadExt;
+    let mut file = tokio::fs::File::open(path).await.map_err(|e| e.to_string())?;
+    let mut hasher = Sha256::new();
+    let mut buf = vec![0u8; 64 * 1024];
+    let mut total: u64 = 0;
+    loop {
+        let n = file.read(&mut buf).await.map_err(|e| e.to_string())?;
+        if n == 0 { break; }
+        hasher.update(&buf[..n]);
+        total += n as u64;
+    }
+    Ok((hex::encode(hasher.finalize()), total))
+}
+
+/// PATCH the file in CHUNK_SIZE pieces, with HEAD-based resume on transport errors.
+/// 5 attempts per chunk; backoff 500ms × attempt.
+async fn chunked_upload(
+    path: &str,
+    patch_url: &str,
+    token: &str,
+    total_size: u64,
+) -> Result<(), String> {
+    use tokio::io::{AsyncReadExt, AsyncSeekExt, SeekFrom};
+
+    let chunk_size = protocol::limits::CHUNK_SIZE;
+    let max_attempts: u32 = 5;
+    let client = reqwest::Client::new();
+
+    let mut file = tokio::fs::File::open(path).await.map_err(|e| e.to_string())?;
+    let mut chunk_buf = vec![0u8; chunk_size];
+    let mut offset: u64 = 0;
+    let mut attempts: u32 = 0;
+
+    while offset < total_size {
+        // Always re-seek so HEAD-based resync (which may have rewound `offset`) works.
+        file.seek(SeekFrom::Start(offset)).await.map_err(|e| e.to_string())?;
+        let to_read = std::cmp::min(chunk_size as u64, total_size - offset) as usize;
+        let chunk = &mut chunk_buf[..to_read];
+        file.read_exact(chunk).await.map_err(|e| e.to_string())?;
+
+        let res = client
+            .patch(patch_url)
+            .header("Authorization", format!("Bearer {}", token))
+            .header("Upload-Offset", offset.to_string())
+            .header("Content-Type", "application/offset+octet-stream")
+            .body(chunk.to_vec())
+            .send()
+            .await;
+
+        match res {
+            Ok(resp) if resp.status().is_success() => {
+                offset += to_read as u64;
+                attempts = 0;
+            }
+            Ok(resp) => {
+                let status = resp.status();
+                // Server includes its authoritative offset on 409. Resync.
+                if let Some(srv) = resp
+                    .headers()
+                    .get("upload-offset")
+                    .and_then(|h| h.to_str().ok())
+                    .and_then(|s| s.parse::<u64>().ok())
+                {
+                    offset = srv;
+                }
+                attempts += 1;
+                if attempts >= max_attempts {
+                    return Err(format!("PATCH failed after {attempts} attempts: HTTP {status}"));
+                }
+                tokio::time::sleep(std::time::Duration::from_millis(500 * attempts as u64)).await;
+            }
+            Err(e) => {
+                attempts += 1;
+                if attempts >= max_attempts {
+                    return Err(format!("PATCH error after {attempts} attempts: {e}"));
+                }
+                // Ask the server where it actually is, then retry from there.
+                if let Ok(head) = client
+                    .head(patch_url)
+                    .header("Authorization", format!("Bearer {}", token))
+                    .send()
+                    .await
+                {
+                    if let Some(srv) = head
+                        .headers()
+                        .get("upload-offset")
+                        .and_then(|h| h.to_str().ok())
+                        .and_then(|s| s.parse::<u64>().ok())
+                    {
+                        offset = srv;
+                    }
+                }
+                tokio::time::sleep(std::time::Duration::from_millis(500 * attempts as u64)).await;
+            }
+        }
+    }
+
+    Ok(())
+}
+
+/// Upload any file using the two-phase + chunked TUS-subset protocol.
+///
+/// Flow:
+///   1. Hash file (streaming) to get SHA-256 + size.
+///   2. Send `file_offer` WS message; await accept/reject (5 min timeout).
+///   3. On accept: chunk-PATCH the file (8 MB chunks, HEAD-based resume on error).
+///   4. Relay sends `file_ready` to recipient on final chunk.
+///
+/// Returns the offerId on success, empty string on reject.
 #[tauri::command]
 async fn upload_file(
     path: String,
     target: Option<String>,
     cfg_state: tauri::State<'_, config::SharedConfig>,
 ) -> Result<String, String> {
+    use uuid::Uuid;
+
     let (relay_url, room_token, device_id) = {
         let cfg = cfg_state.read().unwrap();
         (cfg.relay_url.clone(), cfg.room_token.clone(), cfg.device_id.clone())
     };
 
-    let http_base = relay_to_http_base(&relay_url);
-    let upload_url = format!("{}/upload", http_base);
-
-    let file_bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
-    let file_size = file_bytes.len() as i64;
-    let file_path = std::path::Path::new(&path);
-    let file_name = file_path.file_name().unwrap_or_default().to_string_lossy().into_owned();
+    let file_name = std::path::Path::new(&path)
+        .file_name()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .into_owned();
     let mime = mime_guess::from_path(&path).first_or_octet_stream().to_string();
+    let (sha256_hex, file_size) = hash_file(&path).await?;
 
-    let client = reqwest::Client::new();
-    let part = reqwest::multipart::Part::bytes(file_bytes)
-        .file_name(file_name.clone())
-        .mime_str(&mime)
-        .map_err(|e| e.to_string())?;
-    let form = reqwest::multipart::Form::new()
-        .part("file", part)
-        .text("roomToken", room_token.clone())
-        .text("deviceId", device_id.clone());
-
-    let res = client.post(&upload_url).multipart(form).send().await.map_err(|e| e.to_string())?;
-    if !res.status().is_success() {
-        return Err(format!("Upload failed: {}", res.status()));
-    }
-
-    let res_data: serde_json::Value = res.json().await.map_err(|e| e.to_string())?;
-    let file_id = res_data["fileId"].as_str().unwrap_or_default().to_string();
-    let download_url = format!("{}/download/{}", http_base, file_id);
-
+    let offer_id = Uuid::new_v4().to_string();
+    let file_id  = Uuid::new_v4().to_string();
     let to = target.as_deref().unwrap_or(protocol::BROADCAST);
-    let msg = protocol::Message::new(
-        "file_meta",
+
+    // Register oneshot BEFORE sending to avoid a race with a very fast accept.
+    let rx = connection::register_pending_offer(&offer_id);
+
+    let offer_msg = protocol::Message::new(
+        "file_offer",
         &device_id,
         to,
         &room_token,
         serde_json::json!({
-            "fileId":      file_id,
-            "name":        file_name,
-            "size":        file_size,
-            "downloadUrl": download_url,
+            "offerId": offer_id,
+            "files": [{
+                "fileId":   file_id,
+                "name":     file_name,
+                "size":     file_size,
+                "sha256":   sha256_hex,
+                "mimeType": mime,
+            }],
         }),
     );
-    let json = serde_json::to_string(&msg).map_err(|e| e.to_string())?;
-    lan::send_lan(&json);
-    if let Err(e) = connection::send_raw(json) {
-        eprintln!("[upload_file] relay notify failed after upload (file is on relay): {e}");
-    }
+    let offer_json = serde_json::to_string(&offer_msg).map_err(|e| e.to_string())?;
+    // Fan out via both transports — receiver dedups by msg.id. Defense against a
+    // stale relay socket entry causing targeted offers to be silently queued.
+    lan::send_lan(&offer_json);
+    connection::send_raw(offer_json).map_err(|e| format!("Not connected: {e}"))?;
 
-    Ok(download_url)
+    let result = tokio::time::timeout(std::time::Duration::from_secs(300), rx)
+        .await
+        .map_err(|_| "Offer timed out — no response in 5 minutes".to_string())?
+        .map_err(|_| "Offer channel closed".to_string())?;
+
+    match result {
+        connection::OfferResult::Rejected => {
+            eprintln!("[upload_file] Offer {offer_id} rejected by recipient");
+            Ok(String::new())
+        }
+        connection::OfferResult::Accepted { upload_tokens } => {
+            let token = upload_tokens
+                .get(&file_id)
+                .ok_or_else(|| "Relay did not provide upload token".to_string())?;
+
+            let http_base = relay_to_http_base(&relay_url);
+            let patch_url = format!("{}/upload/{}/{}", http_base, offer_id, file_id);
+
+            chunked_upload(&path, &patch_url, token, file_size).await?;
+            Ok(offer_id)
+        }
+    }
 }
 
 /// Download a file from a URL and save to the user's Downloads folder.
@@ -448,9 +572,16 @@ pub fn run() {
             config::update_device_name,
             config::update_relay_url,
             config::update_screenshot_folder,
+            config::get_trusted_peers,
+            config::add_trusted_peer,
+            config::remove_trusted_peer,
+            config::set_quick_mode,
             connection::send_relay_message,
             connection::get_connection_status,
             connection::leave_room_cmd,
+            connection::send_file_accept,
+            connection::send_file_reject,
+            connection::send_file_done,
             screenshot_toast_dismiss,
             screenshot_toast_show,
             overlay_hide,

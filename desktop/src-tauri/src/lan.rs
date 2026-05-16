@@ -177,14 +177,14 @@ async fn handle_client(
         }
     });
 
-    let (device_id, device_name, room_token) = {
+    let (device_id, device_name, room_token, fingerprint) = {
         let cfg = config.read().unwrap();
-        (cfg.device_id.clone(), cfg.device_name.clone(), cfg.room_token.clone())
+        (cfg.device_id.clone(), cfg.device_name.clone(), cfg.room_token.clone(), cfg.fingerprint.clone())
     };
 
     // Greet the new client with our own device_join so it knows we're here on LAN
     {
-        let join = Message::device_join(&device_id, &device_name, &room_token, "windows");
+        let join = Message::device_join(&device_id, &device_name, &room_token, "windows", &fingerprint);
         if let Ok(json) = serde_json::to_string(&join) {
             let clients = LAN_CLIENTS.lock().unwrap();
             if let Some(tx) = clients.get(&peer_key) {

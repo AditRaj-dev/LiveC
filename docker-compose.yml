@@ -1,0 +1,20 @@
+services:
+  relay:
+    build: ./relay
+    container_name: livec-relay
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # REQUIRED in production — used to HMAC-sign download URLs. If unset, the
+      # relay generates a random in-memory secret per boot, which means signed
+      # URLs are invalidated on every restart.
+      - LIVEC_SIGNING_SECRET=${LIVEC_SIGNING_SECRET}
+      - PORT=3000
+      # Override the upload staging dir if you want to mount it from a volume.
+      - UPLOAD_DIR=/data/uploads
+    volumes:
+      - relay-uploads:/data/uploads
+
+volumes:
+  relay-uploads:

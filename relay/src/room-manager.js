@@ -7,7 +7,7 @@ class RoomManager {
     this.rooms = new Map();
   }
 
-  join(ws, roomToken, deviceId, deviceName, platform) {
+  join(ws, roomToken, deviceId, deviceName, platform, fingerprint) {
     if (!this.rooms.has(roomToken)) {
       this.rooms.set(roomToken, new Map());
     }
@@ -18,6 +18,7 @@ class RoomManager {
     ws.deviceId = deviceId;
     ws.deviceName = deviceName || deviceId;
     ws.platform = platform || 'unknown';
+    ws.fingerprint = fingerprint || '';
 
     // Tell the new joiner about everyone already in the room
     for (const [existingId, existingWs] of room.entries()) {
@@ -29,10 +30,11 @@ class RoomManager {
           to:   deviceId,
           room: roomToken,
           payload: {
-            deviceId:   existingId,
-            deviceName: existingWs.deviceName,
-            platform:   existingWs.platform,
-            timestamp:  Date.now(),
+            deviceId:    existingId,
+            deviceName:  existingWs.deviceName,
+            platform:    existingWs.platform,
+            fingerprint: existingWs.fingerprint || '',
+            timestamp:   Date.now(),
           },
         }));
       }
@@ -49,13 +51,14 @@ class RoomManager {
       room: roomToken,
       payload: {
         deviceId,
-        deviceName: ws.deviceName,
-        platform:   ws.platform,
-        timestamp:  Date.now(),
+        deviceName:  ws.deviceName,
+        platform:    ws.platform,
+        fingerprint: ws.fingerprint,
+        timestamp:   Date.now(),
       }
     });
 
-    console.log(`[RoomManager] Device ${deviceId} joined room ${roomToken}`);
+    console.log(`[RoomManager] Device ${deviceId} (fp=${(ws.fingerprint||'').slice(0,8)}) joined room ${roomToken}`);
   }
 
   leave(ws) {
@@ -63,24 +66,30 @@ class RoomManager {
     if (!roomToken || !deviceId) return;
 
     const room = this.rooms.get(roomToken);
-    if (room) {
-      room.delete(deviceId);
-      if (room.size === 0) {
-        this.rooms.delete(roomToken);
-      } else {
-        // Broadcast device_leave to others
-        this.broadcast(roomToken, deviceId, {
-          type: MESSAGE_TYPES.DEVICE_LEAVE,
-          id:   randomUUID(),
-          from: deviceId,
-          to:   BROADCAST,
-          room: roomToken,
-          payload: {
-            deviceId,
-            timestamp: Date.now(),
-          }
-        });
-      }
+    if (!room) return;
+
+    // Only remove if the ws closing is the CURRENT ws for this deviceId.
+    // Without this check, a late-firing 'close' from a stale reconnect's old
+    // socket would evict the freshly-joined replacement — making targeted
+    // lookups (file_offer, file_accept, etc.) silently route to the offline
+    // queue while broadcasts continue to (intermittently) work.
+    if (room.get(deviceId) !== ws) {
+      console.log(`[RoomManager] Stale close from ${deviceId} ignored (current ws differs)`);
+      return;
+    }
+
+    room.delete(deviceId);
+    if (room.size === 0) {
+      this.rooms.delete(roomToken);
+    } else {
+      this.broadcast(roomToken, deviceId, {
+        type: MESSAGE_TYPES.DEVICE_LEAVE,
+        id:   randomUUID(),
+        from: deviceId,
+        to:   BROADCAST,
+        room: roomToken,
+        payload: { deviceId, timestamp: Date.now() }
+      });
     }
     console.log(`[RoomManager] Device ${deviceId} left room ${roomToken}`);
   }

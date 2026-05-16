@@ -115,6 +115,8 @@ fun HomeScreen(
                     onSendFile = onSendFile,
                     onSave     = { vm.downloadTransfer(it) },
                     onDismiss  = { vm.dismissTransfer(it) },
+                    onAccept   = { vm.acceptOffer(it) },
+                    onReject   = { vm.rejectOffer(it) },
                 )
             }
         }
@@ -287,6 +289,8 @@ private fun FilesTabContent(
     onSendFile: () -> Unit,
     onSave: (TransferItem) -> Unit,
     onDismiss: (TransferItem) -> Unit,
+    onAccept: (TransferItem) -> Unit,
+    onReject: (TransferItem) -> Unit,
 ) {
     LazyColumn(
         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 14.dp),
@@ -302,6 +306,8 @@ private fun FilesTabContent(
                     transfer  = transfer,
                     onSave    = { onSave(transfer) },
                     onDismiss = { onDismiss(transfer) },
+                    onAccept  = { onAccept(transfer) },
+                    onReject  = { onReject(transfer) },
                 )
             }
         } else {
@@ -801,6 +807,8 @@ private fun SwipeableTransferCard(
     transfer: TransferItem,
     onSave: () -> Unit,
     onDismiss: () -> Unit,
+    onAccept: () -> Unit,
+    onReject: () -> Unit,
 ) {
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
@@ -829,12 +837,17 @@ private fun SwipeableTransferCard(
             }
         },
     ) {
-        TransferCard(transfer = transfer, onSave = onSave)
+        TransferCard(transfer = transfer, onSave = onSave, onAccept = onAccept, onReject = onReject)
     }
 }
 
 @Composable
-private fun TransferCard(transfer: TransferItem, onSave: () -> Unit) {
+private fun TransferCard(
+    transfer: TransferItem,
+    onSave: () -> Unit,
+    onAccept: () -> Unit = {},
+    onReject: () -> Unit = {},
+) {
     val isIncoming = transfer.direction == TransferItem.Direction.INCOMING
     val dirColor   = if (isIncoming) LiveCColors.SevMed else LiveCColors.Accent
     val fileColor  = when (transfer.status) {
@@ -925,6 +938,42 @@ private fun TransferCard(transfer: TransferItem, onSave: () -> Unit) {
         }
 
         when (transfer.status) {
+            TransferItem.Status.OFFER_PENDING -> {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(9.dp))
+                            .background(LiveCColors.SevLow.copy(alpha = 0.12f))
+                            .border(1.dp, LiveCColors.SevLow.copy(alpha = 0.3f), RoundedCornerShape(9.dp))
+                            .clickable { onAccept() },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            Icons.Default.Download,
+                            contentDescription = "Accept",
+                            tint = LiveCColors.SevLow,
+                            modifier = Modifier.size(16.dp),
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(9.dp))
+                            .background(LiveCColors.SevCritical.copy(alpha = 0.10f))
+                            .border(1.dp, LiveCColors.SevCritical.copy(alpha = 0.25f), RoundedCornerShape(9.dp))
+                            .clickable { onReject() },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Reject",
+                            tint = LiveCColors.SevCritical,
+                            modifier = Modifier.size(16.dp),
+                        )
+                    }
+                }
+            }
             TransferItem.Status.PENDING -> {
                 Box(
                     modifier = Modifier
@@ -958,11 +1007,13 @@ private fun TransferCard(transfer: TransferItem, onSave: () -> Unit) {
 @Composable
 private fun StatusPill(status: TransferItem.Status) {
     val (label, color) = when (status) {
-        TransferItem.Status.PENDING     -> "Pending"     to LiveCColors.Accent
-        TransferItem.Status.DOWNLOADING -> "Saving…"     to LiveCColors.SevMed
-        TransferItem.Status.UPLOADING   -> "↑ Uploading" to LiveCColors.SevMed
-        TransferItem.Status.DONE        -> "Done"        to LiveCColors.SevLow
-        TransferItem.Status.ERROR       -> "Error"       to LiveCColors.SevCritical
+        TransferItem.Status.OFFER_PENDING -> "Offered"     to LiveCColors.Accent
+        TransferItem.Status.PENDING       -> "Pending"     to LiveCColors.Accent
+        TransferItem.Status.DOWNLOADING   -> "Saving…"     to LiveCColors.SevMed
+        TransferItem.Status.UPLOADING     -> "↑ Uploading" to LiveCColors.SevMed
+        TransferItem.Status.DONE          -> "Done"        to LiveCColors.SevLow
+        TransferItem.Status.ERROR         -> "Error"       to LiveCColors.SevCritical
+        TransferItem.Status.REJECTED      -> "Rejected"    to LiveCColors.SevCritical
     }
     Box(
         modifier = Modifier

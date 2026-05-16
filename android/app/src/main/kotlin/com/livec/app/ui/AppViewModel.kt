@@ -33,16 +33,36 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val clips = AppState.clips
     val transfers = AppState.transfers
 
-    /** Parses the pairing QR payload and writes it to config. */
+    /** Parses the pairing QR payload and writes it to config.
+     *  Phase 5b: if the QR carries a fingerprint, pin it as a trusted (quick-mode) peer.
+     */
     fun pairFromQr(rawPayload: String): Result<Unit> = try {
         val o = JSONObject(rawPayload)
         val relayUrl = o.getString("relayUrl")
         val roomToken = o.getString("roomToken")
-        viewModelScope.launch { store.setRoom(relayUrl, roomToken) }
+        val fingerprint = o.optString("fingerprint", "")
+        val deviceName = o.optString("deviceName", "Paired device")
+        viewModelScope.launch {
+            store.setRoom(relayUrl, roomToken)
+            if (fingerprint.isNotEmpty()) {
+                // QR pinning is an explicit user action → trust + quick-mode.
+                store.addTrustedPeer(fingerprint, deviceName, quickMode = true)
+            }
+        }
         Result.success(Unit)
     } catch (e: Exception) {
         Result.failure(e)
     }
+
+    // ── Trusted-peer commands (Phase 5b) ──────────────────────────────────────
+    fun trustPeer(fingerprint: String, deviceName: String, quickMode: Boolean = false) =
+        viewModelScope.launch { store.addTrustedPeer(fingerprint, deviceName, quickMode) }
+
+    fun untrustPeer(fingerprint: String) =
+        viewModelScope.launch { store.removeTrustedPeer(fingerprint) }
+
+    fun setQuickMode(fingerprint: String, enabled: Boolean) =
+        viewModelScope.launch { store.setQuickMode(fingerprint, enabled) }
 
     fun setRelayUrl(url: String) = viewModelScope.launch { store.setRelayUrl(url) }
     fun setDeviceName(name: String) = viewModelScope.launch { store.setDeviceName(name) }
@@ -99,11 +119,34 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         try {
             dm.enqueue(req)
             AppState.updateTransfer(item.id) { copy(status = TransferItem.Status.DONE) }
+            // Tell the relay it can drop the file immediately.
+            val offerId = item.offerId
+            val sender = item.senderDeviceId
+            if (!offerId.isNullOrEmpty() && !sender.isNullOrEmpty()) {
+                LiveCService.markFileDone(ctx, offerId, item.id, sender)
+            }
         } catch (e: Exception) {
             AppState.updateTransfer(item.id) {
                 copy(status = TransferItem.Status.ERROR, errorMsg = e.message ?: "Failed")
             }
         }
+    }
+
+    /** Accept all files in an incoming offer (called from HomeScreen Accept button). */
+    fun acceptOffer(item: TransferItem) {
+        val sender = item.senderDeviceId ?: item.from
+        val ids = item.offerFileIds?.split(",")?.filter { it.isNotEmpty() } ?: emptyList()
+        if (sender.isEmpty() || ids.isEmpty()) return
+        AppState.updateTransfer(item.id) { copy(status = TransferItem.Status.DOWNLOADING) }
+        LiveCService.acceptOffer(getApplication(), item.id, ids, sender)
+    }
+
+    /** Reject an incoming offer (called from HomeScreen Reject button). */
+    fun rejectOffer(item: TransferItem) {
+        val sender = item.senderDeviceId ?: item.from
+        AppState.removeTransfer(item.id)
+        if (sender.isEmpty()) return
+        LiveCService.rejectOffer(getApplication(), item.id, sender)
     }
 
     /** Send text via share sheet — routed through LiveCService so it uses the active WS. */

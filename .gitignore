@@ -1,0 +1,70 @@
+# ── Node / Relay ────────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.env
+.env.local
+.env.*.local
+relay/tmp-uploads/
+
+# ── Rust / Tauri ────────────────────────────────────────────────────────────
+target/
+**/*.rs.bk
+desktop/src-tauri/Cargo.lock
+desktop/dist/
+desktop/.vite/
+
+# ── Android / Gradle ────────────────────────────────────────────────────────
+android/.gradle/
+android/.idea/
+android/local.properties
+android/build/
+android/app/build/
+android/captures/
+android/app/release/
+android/keystore.properties
+android/*.jks
+android/*.keystore
+android/app/google-services.json
+
+# ── Tauri runtime data (per-install identity, never check in) ───────────────
+livec_config.json
+# Tauri may also place app-data under user app-data dirs at runtime; don't
+# accidentally commit anything that shipped there during dev.
+
+# ── Editor / OS ─────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Build outputs ───────────────────────────────────────────────────────────
+*.apk
+*.aab
+*.exe
+*.msi
+*.dmg
+*.pkg
+dist/
+out/
+
+# ── Logs ────────────────────────────────────────────────────────────────────
+*.log
+logs/
+logcat*.txt
+logcat*.log
+logdump*
+
+# ── Dev scratch (root-level only — keeps real resources under android/, desktop/) ─
+/*.png
+/*.jpg
+/mockup-*.html
+/handoff*.md
+
+# ── Claude / agent scratch ──────────────────────────────────────────────────
+.claude/

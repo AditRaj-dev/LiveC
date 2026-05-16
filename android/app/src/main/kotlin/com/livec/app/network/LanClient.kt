@@ -33,13 +33,13 @@ class LanClient(
     private var loopJob: Job? = null
     private var currentUrl: String = ""
 
-    fun connect(host: String, port: Int, deviceId: String, deviceName: String, roomToken: String) {
+    fun connect(host: String, port: Int, deviceId: String, deviceName: String, roomToken: String, fingerprint: String) {
         val url = "ws://$host:$port/ws"
         if (url == currentUrl && loopJob?.isActive == true) return
         Log.d(TAG, "Connecting to $url")
         disconnect()
         currentUrl = url
-        val joinMsg = Message.deviceJoin(deviceId, deviceName, roomToken)
+        val joinMsg = Message.deviceJoin(deviceId, deviceName, roomToken, fingerprint)
         loopJob = scope.launch { connectLoop(url, joinMsg) }
     }
 

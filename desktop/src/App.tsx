@@ -114,7 +114,15 @@ function LeftPanel({
   onConnect: (token: string) => void;
 }) {
   const [inputRoom, setInputRoom] = useState("");
-  const qrValue = config ? JSON.stringify({ relayUrl: config.relayUrl, roomToken: config.roomToken }) : "";
+  // Phase 5b: include our fingerprint so the joiner can pin it as trusted.
+  const qrValue = config
+    ? JSON.stringify({
+        relayUrl: config.relayUrl,
+        roomToken: config.roomToken,
+        fingerprint: config.fingerprint ?? "",
+        deviceName: config.deviceName ?? "",
+      })
+    : "";
 
   return (
     <div className="w-56 border-r border-default bg-base/60 flex flex-col shrink-0 overflow-hidden">
@@ -331,11 +339,15 @@ function TransferRow({
   onDownload,
   onReveal,
   onDismiss,
+  onAccept,
+  onReject,
 }: {
   transfer: FileTransfer;
   onDownload: (id: string) => void;
   onReveal: (path: string) => void;
   onDismiss: (id: string) => void;
+  onAccept: (offerId: string) => void;
+  onReject: (offerId: string) => void;
 }) {
   const isIncoming = transfer.direction === "incoming";
   const ext = transfer.name.split(".").pop()?.toLowerCase() ?? "";
@@ -389,6 +401,22 @@ function TransferRow({
       </div>
 
       <div className="flex flex-col items-end gap-1.5 shrink-0 mt-5">
+        {transfer.status === "offer_pending" && isIncoming && (
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => onAccept(transfer.id)}
+              className="px-2 py-1 rounded-md bg-[rgb(var(--sev-low)/0.15)] border border-[rgb(var(--sev-low)/0.3)] text-[rgb(var(--sev-low))] text-[10px] font-semibold hover:bg-[rgb(var(--sev-low)/0.25)] transition-colors"
+            >
+              Accept
+            </button>
+            <button
+              onClick={() => onReject(transfer.id)}
+              className="px-2 py-1 rounded-md bg-[rgb(var(--sev-critical)/0.12)] border border-[rgb(var(--sev-critical)/0.3)] text-[rgb(var(--sev-critical))] text-[10px] font-semibold hover:bg-[rgb(var(--sev-critical)/0.2)] transition-colors"
+            >
+              Reject
+            </button>
+          </div>
+        )}
         {transfer.status === "pending" && isIncoming && (
           <button
             onClick={() => onDownload(transfer.id)}
@@ -420,6 +448,8 @@ function RightPanel({
   onBrowse,
   onClear,
   onDismiss,
+  onAccept,
+  onReject,
 }: {
   transfers: FileTransfer[];
   onDownload: (id: string) => void;
@@ -427,6 +457,8 @@ function RightPanel({
   onBrowse: () => void;
   onClear: () => void;
   onDismiss: (id: string) => void;
+  onAccept: (offerId: string) => void;
+  onReject: (offerId: string) => void;
 }) {
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -502,10 +534,170 @@ function RightPanel({
               onDownload={onDownload}
               onReveal={onReveal}
               onDismiss={onDismiss}
+              onAccept={onAccept}
+              onReject={onReject}
             />
           ))
         )}
       </div>
+    </div>
+  );
+}
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface PendingPeer {
+  deviceId: string;
+  deviceName: string;
+  fingerprint: string;
+  platform: string;
+}
+
+interface TrustedPeer {
+  fingerprint: string;
+  deviceName: string;
+  addedAt: number;
+  quickMode: boolean;
+}
+
+// ─── Untrusted Peer Banner ────────────────────────────────────────────────────
+function UntrustedPeerBanner({
+  pending,
+  onTrust,
+  onIgnore,
+}: {
+  pending: PendingPeer[];
+  onTrust: (peer: PendingPeer, quickMode: boolean) => void;
+  onIgnore: (peer: PendingPeer) => void;
+}) {
+  const [quickModeMap, setQuickModeMap] = useState<Record<string, boolean>>({});
+
+  if (pending.length === 0) return null;
+
+  return (
+    <div className="absolute top-12 left-0 right-0 z-40 flex flex-col gap-1.5 px-3 pt-2 pointer-events-none">
+      {pending.map((peer) => {
+        const qm = quickModeMap[peer.deviceId] ?? false;
+        return (
+          <div
+            key={peer.deviceId}
+            className="pointer-events-auto flex items-center gap-3 px-3.5 py-2.5 rounded-xl border border-[rgb(var(--sev-med)/0.45)] bg-[rgb(var(--bg-surface)/0.96)] shadow-lg backdrop-blur-md"
+          >
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-primary truncate">
+                New device: <span className="text-accent">{peer.deviceName}</span>
+              </p>
+              <p className="text-[10px] text-tertiary font-mono">
+                {peer.fingerprint.slice(0, 8)}…
+              </p>
+            </div>
+            <label className="flex items-center gap-1.5 text-[10px] text-tertiary whitespace-nowrap cursor-pointer select-none">
+              <input
+                type="checkbox"
+                className="w-3 h-3 accent-amber-400"
+                checked={qm}
+                onChange={(e) =>
+                  setQuickModeMap((prev) => ({ ...prev, [peer.deviceId]: e.target.checked }))
+                }
+              />
+              Quick mode
+            </label>
+            <button
+              onClick={() => onTrust(peer, qm)}
+              className="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-accent text-[rgb(var(--bg-base))] hover:bg-accent/90 transition-colors shrink-0"
+            >
+              Trust
+            </button>
+            <button
+              onClick={() => onIgnore(peer)}
+              className="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-elevated border border-default text-secondary hover:text-primary transition-colors shrink-0"
+            >
+              Ignore
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Trusted Devices Section (inside Settings) ────────────────────────────────
+function TrustedDevicesSection({ onMutated }: { onMutated: () => void }) {
+  const [peers, setPeers] = useState<TrustedPeer[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(async () => {
+    try {
+      const list = await invoke<TrustedPeer[]>("get_trusted_peers");
+      setPeers(list);
+    } catch {
+      setPeers([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const handleRemove = async (fingerprint: string) => {
+    try {
+      await invoke("remove_trusted_peer", { fingerprint });
+      onMutated();
+      refresh();
+    } catch {}
+  };
+
+  const handleToggleQuick = async (fingerprint: string, enabled: boolean) => {
+    try {
+      await invoke("set_quick_mode", { fingerprint, enabled });
+      refresh();
+    } catch {}
+  };
+
+  return (
+    <div className="space-y-2">
+      <label className="text-xs font-medium text-secondary">Trusted Devices</label>
+      {loading ? (
+        <p className="text-xs text-tertiary">Loading…</p>
+      ) : peers.length === 0 ? (
+        <p className="text-[10px] text-tertiary leading-relaxed">
+          No trusted devices yet. Scan a QR code to pair.
+        </p>
+      ) : (
+        <div className="space-y-1.5">
+          {peers.map((peer) => (
+            <div
+              key={peer.fingerprint}
+              className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg border border-default bg-elevated"
+            >
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-primary truncate">{peer.deviceName}</p>
+                <p className="text-[10px] text-tertiary font-mono">
+                  {peer.fingerprint.slice(0, 8)}
+                </p>
+                <p className="text-[10px] text-tertiary">
+                  {new Date(peer.addedAt).toLocaleString()}
+                </p>
+              </div>
+              <label className="flex items-center gap-1.5 text-[10px] text-tertiary whitespace-nowrap cursor-pointer select-none shrink-0">
+                <input
+                  type="checkbox"
+                  className="w-3 h-3 accent-amber-400"
+                  checked={peer.quickMode}
+                  onChange={(e) => handleToggleQuick(peer.fingerprint, e.target.checked)}
+                />
+                Quick
+              </label>
+              <button
+                onClick={() => handleRemove(peer.fingerprint)}
+                className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-[rgb(var(--sev-critical)/0.12)] text-tertiary hover:text-[rgb(var(--sev-critical))] transition-colors shrink-0"
+                title="Remove"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -577,6 +769,8 @@ function SettingsModal({
             />
           </div>
 
+          <TrustedDevicesSection onMutated={() => {}} />
+
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-secondary">Screenshot Watch Folder</label>
             <div className="flex gap-2">
@@ -633,12 +827,42 @@ function SettingsModal({
 // ─── App Shell ────────────────────────────────────────────────────────────────
 export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [pendingTrust, setPendingTrust] = useState<PendingPeer[]>([]);
   const { entries, copyEntry, clearEntries } = useClipboard();
   const { room, setRoom } = useRoomState();
   const { config, updateDeviceName, updateRelayUrl, updateScreenshotFolder } = useConfig();
-  const { transfers, downloadTransfer, startUpload, updateTransferById, clearTransfers, dismissTransfer } = useFileTransfers();
+  const { transfers, downloadTransfer, startUpload, updateTransferById, clearTransfers, dismissTransfer, acceptOffer, rejectOffer } = useFileTransfers();
   const configRef = useRef(config);
   useEffect(() => { configRef.current = config; }, [config]);
+
+  // Subscribe to untrusted peer events
+  useEffect(() => {
+    const unlistenPromise = listen<PendingPeer>("relay:untrusted_peer", (e) => {
+      setPendingTrust((prev) => {
+        // Avoid duplicates if the event fires multiple times for the same device
+        if (prev.some((p) => p.deviceId === e.payload.deviceId)) return prev;
+        return [...prev, e.payload];
+      });
+    });
+    return () => { unlistenPromise.then((unlisten) => unlisten()); };
+  }, []);
+
+  const handleTrustPeer = useCallback(async (peer: PendingPeer, quickMode: boolean) => {
+    try {
+      await invoke("add_trusted_peer", {
+        fingerprint: peer.fingerprint,
+        deviceName: peer.deviceName,
+        quickMode,
+      });
+    } catch (err) {
+      console.error("[handleTrustPeer] failed:", err);
+    }
+    setPendingTrust((prev) => prev.filter((p) => p.deviceId !== peer.deviceId));
+  }, []);
+
+  const handleIgnorePeer = useCallback((peer: PendingPeer) => {
+    setPendingTrust((prev) => prev.filter((p) => p.deviceId !== peer.deviceId));
+  }, []);
 
   const handleConnect = useCallback((roomId: string) => {
     setRoom((prev) => ({ ...prev, roomId, connected: true }));
@@ -684,7 +908,12 @@ export default function App() {
   }, []);
 
   return (
-    <div className="flex flex-col h-screen bg-[rgb(var(--bg-base))] text-[rgb(var(--text-primary))] overflow-hidden">
+    <div className="relative flex flex-col h-screen bg-[rgb(var(--bg-base))] text-[rgb(var(--text-primary))] overflow-hidden">
+      <UntrustedPeerBanner
+        pending={pendingTrust}
+        onTrust={handleTrustPeer}
+        onIgnore={handleIgnorePeer}
+      />
       <TopBar
         connected={room.connected}
         roomId={room.roomId}
@@ -710,6 +939,8 @@ export default function App() {
           onBrowse={handleBrowse}
           onClear={clearTransfers}
           onDismiss={dismissTransfer}
+          onAccept={acceptOffer}
+          onReject={rejectOffer}
         />
       </div>
 

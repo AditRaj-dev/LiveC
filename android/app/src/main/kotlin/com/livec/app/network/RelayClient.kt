@@ -34,7 +34,7 @@ class RelayClient(
     private var relayUrl: String = ""
     private var joinMessage: Message? = null
 
-    fun start(relayUrl: String, deviceId: String, deviceName: String, roomToken: String) {
+    fun start(relayUrl: String, deviceId: String, deviceName: String, roomToken: String, fingerprint: String) {
         if (relayUrl.isBlank() || roomToken.isBlank()) {
             Log.w(TAG, "Skip start: relayUrl or roomToken empty")
             return
@@ -53,7 +53,7 @@ class RelayClient(
             .let { u -> if (u.endsWith(Paths.WS)) u else u + Paths.WS }
         this.relayUrl = wsUrl
         Log.d(TAG, "Relay WS URL: $wsUrl")
-        this.joinMessage = Message.deviceJoin(deviceId, deviceName, roomToken)
+        this.joinMessage = Message.deviceJoin(deviceId, deviceName, roomToken, fingerprint)
 
         loopJob = scope.launch { connectLoop() }
     }

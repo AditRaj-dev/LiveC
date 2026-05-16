@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.livec.app.data.TrustedPeer
 import com.livec.app.ui.AppViewModel
 import com.livec.app.ui.theme.LiveCColors
 
@@ -164,6 +165,26 @@ fun SettingsScreen(vm: AppViewModel, onBack: () -> Unit) {
                 }
             }
 
+            // ── Trusted Devices ───────────────────────────────────────────────
+            val peers = config?.trustedPeers ?: emptyList()
+            SettingsGroup(label = "Trusted Devices") {
+                if (peers.isEmpty()) {
+                    Text(
+                        text = "No trusted devices yet. Scan a QR code to pair.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = LiveCColors.TextTertiary,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    )
+                } else {
+                    peers.forEach { peer ->
+                        TrustedPeerRow(peer = peer, vm = vm)
+                    }
+                }
+            }
+
             // ── Danger zone ───────────────────────────────────────────────────
             SettingsGroup(label = "Room") {
                 OutlinedButton(
@@ -220,6 +241,67 @@ private fun SettingsGroup(label: String, content: @Composable ColumnScope.() -> 
         )
         HorizontalDivider(color = LiveCColors.Border, thickness = 0.5.dp)
         content()
+    }
+}
+
+@Composable
+private fun TrustedPeerRow(peer: TrustedPeer, vm: AppViewModel) {
+    val addedAtFormatted = remember(peer.addedAt) {
+        java.text.DateFormat.getDateTimeInstance().format(java.util.Date(peer.addedAt))
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.small)
+            .background(LiveCColors.BgElevated)
+            .border(1.dp, LiveCColors.Border, MaterialTheme.shapes.small)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = peer.deviceName.ifEmpty { "Unknown device" },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = "${peer.fingerprint.take(8)}…",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                ),
+                color = LiveCColors.TextTertiary,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = addedAtFormatted,
+                style = MaterialTheme.typography.labelSmall,
+                color = LiveCColors.TextTertiary,
+            )
+        }
+        Spacer(Modifier.width(8.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Switch(
+                checked = peer.quickMode,
+                onCheckedChange = { vm.setQuickMode(peer.fingerprint, it) },
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = LiveCColors.BgBase,
+                    checkedTrackColor = LiveCColors.Accent,
+                    uncheckedThumbColor = LiveCColors.TextTertiary,
+                    uncheckedTrackColor = LiveCColors.BgSurface,
+                ),
+            )
+            IconButton(onClick = { vm.untrustPeer(peer.fingerprint) }) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Remove trusted device",
+                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+        }
     }
 }
 

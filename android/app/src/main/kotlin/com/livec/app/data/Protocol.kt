@@ -18,6 +18,11 @@ object MessageType {
     const val FILE_META = "file_meta"
     const val FILE_EXPIRED = "file_expired"
     const val FILES_CLEAR = "files_clear"
+    const val FILE_OFFER = "file_offer"
+    const val FILE_ACCEPT = "file_accept"
+    const val FILE_REJECT = "file_reject"
+    const val FILE_READY = "file_ready"
+    const val FILE_DONE = "file_done"
     const val PING = "ping"
     const val PONG = "pong"
     const val ACK = "ack"
@@ -26,9 +31,13 @@ object MessageType {
 const val BROADCAST = "broadcast"
 
 object Limits {
-    const val MAX_FILE_BYTES = 100L * 1024L * 1024L
+    const val MAX_FILE_BYTES = 10L * 1024L * 1024L * 1024L              // 10 GB
     const val MAX_TEXT_BYTES = 1L * 1024L * 1024L
-    const val FILE_TTL_MS = 90_000L
+    const val FILE_TTL_MS = 7L * 24L * 60L * 60L * 1000L                // 7 days
+    const val OFFER_TTL_MS = 24L * 60L * 60L * 1000L                    // 24h
+    const val OFFLINE_QUEUE_TTL_MS = 7L * 24L * 60L * 60L * 1000L       // 7 days
+    const val OFFLINE_QUEUE_MAX_PER_DEVICE = 200
+    const val CHUNK_SIZE = 8 * 1024 * 1024                              // 8 MB
 }
 
 const val UPLOAD_FIELD_NAME = "file"

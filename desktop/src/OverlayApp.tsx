@@ -70,40 +70,34 @@ export default function OverlayApp() {
 
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const uploadFilesToDevice = async (targetDeviceId: string | null): Promise<boolean> => {
+  // Phase 4: `upload_file` is now two-phase (file_offer → await accept → chunked PATCH).
+  // It can block for up to 5 minutes waiting for the recipient to accept. Fire and forget
+  // so the shelf can close immediately; progress is tracked in the main window via
+  // relay:file_offer / file_ready / file_reject events.
+  const uploadFilesToDevice = (targetDeviceId: string | null) => {
     const files = droppedFilesRef.current;
-    if (files.length === 0) return true;
-
+    if (files.length === 0) return;
     setUploadError(null);
-    const errors: string[] = [];
     for (const filePath of files) {
       const name = filePath.split(/[\\/]/).pop() ?? 'file';
-      try {
-        const downloadUrl = await invoke<string>('upload_file', {
-          path: filePath,
-          target: targetDeviceId ?? undefined,
+      // Kick off but do not await; errors surface in the main window's transfer list.
+      invoke<string>('upload_file', {
+        path: filePath,
+        target: targetDeviceId ?? undefined,
+      })
+        .then((offerId) => { void emit('overlay:file_uploaded', { name, offerId }); })
+        .catch((err) => {
+          console.error('Upload failed:', filePath, err);
         });
-        await emit('overlay:file_uploaded', { name, downloadUrl });
-      } catch (err) {
-        const msg = typeof err === 'string' ? err : (err as any)?.message ?? 'Upload failed';
-        console.error('Upload failed:', filePath, err);
-        errors.push(`${name}: ${msg}`);
-      }
     }
-    if (errors.length > 0) {
-      setUploadError(errors.join('\n'));
-      return false;
-    }
-    return true;
   };
 
-  const handleDeviceSelect = async (deviceId: string | null) => {
-    const ok = await uploadFilesToDevice(deviceId);
-    if (ok) {
-      setShelfState('accepted');
-      scheduleHide(1200);
-    }
-    // on error: stay in 'picking' state so user sees the error and can retry
+  const handleDeviceSelect = (deviceId: string | null) => {
+    uploadFilesToDevice(deviceId);
+    // Two-phase upload runs in background — close the shelf immediately so the user
+    // isn't waiting on the recipient to accept (which can take up to 5 min).
+    setShelfState('accepted');
+    scheduleHide(1200);
   };
 
   const handleEscapeKey = (e: KeyboardEvent) => {
@@ -193,14 +187,14 @@ export default function OverlayApp() {
 
   const visible = state !== 'hidden';
   const shelfTitle = state === 'accepted'
-    ? 'Synced'
+    ? 'Sent'
     : state === 'ready'
       ? 'Drop to sync'
       : 'Drop files';
   const shelfSubtitle = state === 'accepted'
     ? draggedFileCount > 1
-      ? `${draggedFileCount} files moved to LiveC`
-      : 'File moved to LiveC'
+      ? `${draggedFileCount} files awaiting recipient`
+      : 'Awaiting recipient'
     : state === 'ready'
       ? hasDraggedFiles && draggedFileCount > 1
         ? `${draggedFileCount} files detected`

@@ -169,18 +169,30 @@ export function useRoomState() {
   }, []);
 
   useEffect(() => {
-    const unlisten = listen<{ deviceId: string; deviceName: string; platform: string }>(
+    const unlisten = listen<{ deviceId: string; deviceName: string; platform: string; fingerprint?: string }>(
       "relay:device_join",
       (event) => {
-        const { deviceId, deviceName, platform } = event.payload;
+        const { deviceId, deviceName, platform, fingerprint } = event.payload;
         setRoom((r) => {
-          const exists = r.devices.some((d) => d.id === deviceId);
-          if (exists) return r;
+          const existing = r.devices.find((d) => d.id === deviceId);
+          if (existing) {
+            // Backfill fingerprint when a later device_join carries one.
+            if (!existing.fingerprint && fingerprint) {
+              return {
+                ...r,
+                devices: r.devices.map((d) =>
+                  d.id === deviceId ? { ...d, fingerprint } : d
+                ),
+              };
+            }
+            return r;
+          }
           const newDevice: Device = {
             id: deviceId,
             label: deviceName,
             platform: platform as Device["platform"],
             lastSeen: Date.now(),
+            fingerprint,
           };
           return { ...r, devices: [...r.devices, newDevice] };
         });
@@ -282,7 +294,7 @@ export function useFileTransfers() {
     updateTransfers((prev) => [t, ...prev].slice(0, 50));
   }, [updateTransfers]);
 
-  // Incoming file_meta from relay
+  // Incoming file_meta from relay (legacy single-phase path)
   useEffect(() => {
     const unlisten = listen<{
       fileId: string; name: string; size: number; downloadUrl: string; from: string;
@@ -302,6 +314,91 @@ export function useFileTransfers() {
     return () => { unlisten.then((fn) => fn()); };
   }, [addTransfer]);
 
+  // Incoming file offer — add as offer_pending, user must accept/reject.
+  useEffect(() => {
+    const unlisten = listen<{
+      offerId: string;
+      files: Array<{ fileId: string; name: string; size: number; mimeType: string }>;
+      from: string;
+    }>("relay:file_offer", (event) => {
+      const { offerId, files, from } = event.payload;
+      const firstFile = files?.[0];
+      if (!firstFile) return;
+      addTransfer({
+        id: offerId,
+        name: files.length === 1 ? firstFile.name : `${files.length} files`,
+        size: files.reduce((s, f) => s + (f.size || 0), 0),
+        downloadUrl: "",
+        from,
+        timestamp: Date.now(),
+        status: "offer_pending",
+        direction: "incoming",
+        offerId,
+        senderDeviceId: from,
+        fileIds: files.map((f) => f.fileId),
+      });
+    });
+    return () => { unlisten.then((fn) => fn()); };
+  }, [addTransfer]);
+
+  // Relay confirmed upload complete — file is ready to download.
+  useEffect(() => {
+    const unlisten = listen<{
+      offerId: string; fileId: string; name: string; size: number; downloadUrl: string; from: string;
+    }>("relay:file_ready", (event) => {
+      const { offerId, fileId, name, size, downloadUrl, from } = event.payload;
+      // Replace the offer_pending entry (keyed by offerId) with a downloadable transfer.
+      updateTransfers((prev) => {
+        const existing = prev.find((t) => t.id === offerId);
+        if (existing) {
+          return prev.map((t) =>
+            t.id === offerId
+              ? {
+                  ...t,
+                  id: fileId,
+                  name,
+                  size,
+                  downloadUrl,
+                  status: "pending" as const,
+                  offerId,
+                  senderDeviceId: from,
+                }
+              : t
+          );
+        }
+        return [
+          {
+            id: fileId,
+            name: name || "file",
+            size: size || 0,
+            downloadUrl,
+            from,
+            timestamp: Date.now(),
+            status: "pending" as const,
+            direction: "incoming" as const,
+            offerId,
+            senderDeviceId: from,
+          },
+          ...prev,
+        ].slice(0, 50);
+      });
+    });
+    return () => { unlisten.then((fn) => fn()); };
+  }, [updateTransfers]);
+
+  // Our outbound offer was rejected — mark error.
+  useEffect(() => {
+    const unlisten = listen<{ offerId: string; from: string }>("relay:file_reject", (event) => {
+      const { offerId } = event.payload;
+      updateTransfers((prev) =>
+        prev.map((t) =>
+          t.id === offerId ? { ...t, status: "rejected" as const } : t
+        )
+      );
+    });
+    return () => { unlisten.then((fn) => fn()); };
+  }, [updateTransfers]);
+
   // Relay TTL expiry — mark the transfer as errored
   useEffect(() => {
     const unlisten = listen<{ fileId: string }>("relay:file_expired", (event) => {
@@ -315,31 +412,6 @@ export function useFileTransfers() {
     return () => { unlisten.then((fn) => fn()); };
   }, [updateTransfers]);
 
-  // Files dropped onto the main window
-  useEffect(() => {
-    const unlisten = listen<{ files: string[] }>("main:file_drop", async (event) => {
-      for (const path of event.payload.files ?? []) {
-        try {
-          const downloadUrl = await invoke<string>("upload_file", { path });
-          const name = path.split(/[\\/]/).pop() ?? "file";
-          addTransfer({
-            id: String(Date.now()),
-            name,
-            size: 0,
-            downloadUrl,
-            from: "local",
-            timestamp: Date.now(),
-            status: "done",
-            direction: "outgoing",
-          });
-        } catch (err) {
-          console.error("Drop upload failed:", err);
-        }
-      }
-    });
-    return () => { unlisten.then((fn) => fn()); };
-  }, [addTransfer]);
-
   const downloadTransfer = useCallback(async (id: string) => {
     const transfer = transfersRef.current.find((t) => t.id === id);
     if (!transfer) return;
@@ -351,6 +423,15 @@ export function useFileTransfers() {
         filename: transfer.name,
       });
       updateTransfers((prev) => prev.map((t) => t.id === id ? { ...t, status: "done", savedPath } : t));
+
+      // Tell the relay it can drop the file immediately — frees disk without waiting for TTL.
+      if (transfer.offerId && transfer.senderDeviceId) {
+        invoke("send_file_done", {
+          offerId: transfer.offerId,
+          fileId: id,
+          senderDeviceId: transfer.senderDeviceId,
+        }).catch((e) => console.warn("[downloadTransfer] send_file_done failed:", e));
+      }
     } catch (err) {
       const msg = typeof err === "string" ? err : (err as any)?.message ?? "Download failed";
       updateTransfers((prev) => prev.map((t) => t.id === id ? { ...t, status: "error", errorMsg: msg } : t));
@@ -390,6 +471,30 @@ export function useFileTransfers() {
     updateTransfers((prev) => prev.map((t) => t.id === id ? { ...t, ...patch } : t));
   }, [updateTransfers]);
 
+  // Files dropped onto the main window — use two-phase protocol.
+  useEffect(() => {
+    const unlisten = listen<{ files: string[] }>("main:file_drop", async (event) => {
+      for (const path of event.payload.files ?? []) {
+        const name = path.split(/[\\/]/).pop() ?? "file";
+        const tempId = startUpload(name);
+        try {
+          const offerId = await invoke<string>("upload_file", { path });
+          if (offerId) {
+            // Upload delivered; relay will send file_ready to recipient.
+            updateTransferById(tempId, { id: offerId, status: "done" });
+          } else {
+            // Empty string = rejected
+            updateTransferById(tempId, { status: "rejected" });
+          }
+        } catch (err) {
+          const msg = typeof err === "string" ? err : (err as any)?.message ?? "Upload failed";
+          updateTransferById(tempId, { status: "error", errorMsg: msg });
+        }
+      }
+    });
+    return () => { unlisten.then((fn) => fn()); };
+  }, [startUpload, updateTransferById]);
+
   const clearTransfers = useCallback(() => {
     transferClearedAtRef.current = Date.now();
     updateTransfers(() => []);
@@ -415,5 +520,39 @@ export function useFileTransfers() {
     }
   }, [updateTransfers]);
 
-  return { transfers, downloadTransfer, addOutgoing, startUpload, updateTransferById, clearTransfers, dismissTransfer };
+  // Accept all files in an incoming offer. Reads fileIds + sender from the stored
+  // offer_pending entry, so callers only need to pass the offerId.
+  const acceptOffer = useCallback(async (offerId: string) => {
+    const offer = transfersRef.current.find((t) => t.id === offerId && t.status === "offer_pending");
+    if (!offer) return;
+    const senderDeviceId = offer.senderDeviceId ?? offer.from;
+    const fileIds = offer.fileIds ?? [];
+    if (!senderDeviceId || fileIds.length === 0) {
+      console.warn("[acceptOffer] missing senderDeviceId or fileIds for offer", offerId);
+      return;
+    }
+    // Switch to a waiting state — relay will send file_ready once sender uploads.
+    updateTransfers((prev) =>
+      prev.map((t) => t.id === offerId ? { ...t, status: "downloading" as const } : t)
+    );
+    try {
+      await invoke("send_file_accept", { offerId, fileIds, senderDeviceId });
+    } catch (err) {
+      console.error("[acceptOffer] send_file_accept failed:", err);
+    }
+  }, [updateTransfers]);
+
+  const rejectOffer = useCallback(async (offerId: string) => {
+    const offer = transfersRef.current.find((t) => t.id === offerId);
+    const senderDeviceId = offer?.senderDeviceId ?? offer?.from;
+    updateTransfers((prev) => prev.filter((t) => t.id !== offerId));
+    if (!senderDeviceId) return;
+    try {
+      await invoke("send_file_reject", { offerId, senderDeviceId });
+    } catch (err) {
+      console.error("[rejectOffer] send_file_reject failed:", err);
+    }
+  }, [updateTransfers]);
+
+  return { transfers, downloadTransfer, addOutgoing, startUpload, updateTransferById, clearTransfers, dismissTransfer, acceptOffer, rejectOffer };
 }

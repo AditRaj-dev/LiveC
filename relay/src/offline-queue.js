@@ -1,11 +1,13 @@
+const { LIMITS } = require('./protocol');
+
 class OfflineQueue {
   constructor() {
     // Map<deviceId, Array<{message, timestamp}>>
     this.queues = new Map();
-    this.MAX_ITEMS = 50;
-    this.MAX_AGE_MS = 60 * 60 * 1000; // 1 hour
+    this.MAX_ITEMS = LIMITS.OFFLINE_QUEUE_MAX_PER_DEVICE;
+    this.MAX_AGE_MS = LIMITS.OFFLINE_QUEUE_TTL_MS;
 
-    // Start cleanup interval
+    // Start cleanup interval (every minute is fine even with 7-day TTL).
     setInterval(() => this.cleanup(), 60000);
   }
 
