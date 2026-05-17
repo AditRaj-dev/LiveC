@@ -713,8 +713,8 @@ class LiveCService : LifecycleService() {
 
                     val patchUrl = "$httpBase/upload/$offerId/$fileId"
                     try {
-                        chunkedUpload(cacheFile, patchUrl, token, size)
-                        AppState.updateTransfer(offerId) { copy(status = TransferItem.Status.DONE) }
+                        chunkedUpload(offerId, cacheFile, patchUrl, token, size)
+                        AppState.updateTransfer(offerId) { copy(status = TransferItem.Status.DONE, progress = 1f) }
                     } catch (e: Exception) {
                         Log.e(TAG, "Chunked upload failed", e)
                         AppState.updateTransfer(offerId) {
@@ -727,8 +727,10 @@ class LiveCService : LifecycleService() {
             }
         }
 
-    /** Stream `file` to `patchUrl` in CHUNK_SIZE pieces with HEAD-based resume. */
-    private fun chunkedUpload(file: File, patchUrl: String, token: String, totalSize: Long) {
+    /** Stream `file` to `patchUrl` in CHUNK_SIZE pieces with HEAD-based resume.
+     *  Updates AppState.transfer.progress after each accepted chunk so HomeScreen
+     *  can render a progress bar. */
+    private fun chunkedUpload(transferId: String, file: File, patchUrl: String, token: String, totalSize: Long) {
         val http = OkHttpClient.Builder()
             .connectTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(120, TimeUnit.SECONDS)
@@ -759,6 +761,8 @@ class LiveCService : LifecycleService() {
                         if (resp.isSuccessful) {
                             offset += toRead
                             attempts = 0
+                            val ratio = if (totalSize > 0) offset.toFloat() / totalSize.toFloat() else 0f
+                            AppState.updateTransfer(transferId) { copy(progress = ratio.coerceIn(0f, 1f)) }
                         } else {
                             resp.header("Upload-Offset")?.toLongOrNull()?.let { offset = it }
                             attempts++

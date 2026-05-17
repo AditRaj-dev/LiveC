@@ -238,12 +238,16 @@ async fn hash_file(path: &str) -> Result<(String, u64), String> {
 
 /// PATCH the file in CHUNK_SIZE pieces, with HEAD-based resume on transport errors.
 /// 5 attempts per chunk; backoff 500ms × attempt.
+/// Emits `transfer:progress` to the frontend after every successful chunk.
 async fn chunked_upload(
+    app: &tauri::AppHandle,
+    transfer_id: &str,
     path: &str,
     patch_url: &str,
     token: &str,
     total_size: u64,
 ) -> Result<(), String> {
+    use tauri::Emitter;
     use tokio::io::{AsyncReadExt, AsyncSeekExt, SeekFrom};
 
     let chunk_size = protocol::limits::CHUNK_SIZE;
@@ -275,6 +279,12 @@ async fn chunked_upload(
             Ok(resp) if resp.status().is_success() => {
                 offset += to_read as u64;
                 attempts = 0;
+                let _ = app.emit("transfer:progress", serde_json::json!({
+                    "id":        transfer_id,
+                    "direction": "outgoing",
+                    "sent":      offset,
+                    "total":     total_size,
+                }));
             }
             Ok(resp) => {
                 let status = resp.status();
@@ -335,6 +345,7 @@ async fn chunked_upload(
 async fn upload_file(
     path: String,
     target: Option<String>,
+    app: tauri::AppHandle,
     cfg_state: tauri::State<'_, config::SharedConfig>,
 ) -> Result<String, String> {
     use uuid::Uuid;
@@ -399,21 +410,32 @@ async fn upload_file(
             let http_base = relay_to_http_base(&relay_url);
             let patch_url = format!("{}/upload/{}/{}", http_base, offer_id, file_id);
 
-            chunked_upload(&path, &patch_url, token, file_size).await?;
+            chunked_upload(&app, &offer_id, &path, &patch_url, token, file_size).await?;
             Ok(offer_id)
         }
     }
 }
 
 /// Download a file from a URL and save to the user's Downloads folder.
+/// Streams the response (no full-file in RAM) and emits `transfer:progress`
+/// to the frontend every ~64 KB so the UI can show a real progress bar.
 #[tauri::command]
-async fn download_file(url: String, filename: String) -> Result<String, String> {
+async fn download_file(
+    url: String,
+    filename: String,
+    transfer_id: Option<String>,
+    app: tauri::AppHandle,
+) -> Result<String, String> {
+    use tauri::Emitter;
+    use tokio::io::AsyncWriteExt;
+
     let client = reqwest::Client::new();
-    let response = client.get(&url).send().await.map_err(|e| e.to_string())?;
+    let mut response = client.get(&url).send().await.map_err(|e| e.to_string())?;
     if !response.status().is_success() {
         return Err(format!("Download failed: {}", response.status()));
     }
-    let bytes = response.bytes().await.map_err(|e| e.to_string())?;
+
+    let total = response.content_length().unwrap_or(0);
 
     let downloads_dir = dirs::download_dir()
         .or_else(|| dirs::home_dir().map(|h| h.join("Downloads")))
@@ -435,7 +457,28 @@ async fn download_file(url: String, filename: String) -> Result<String, String> 
         }
     }
 
-    std::fs::write(&save_path, &bytes).map_err(|e| e.to_string())?;
+    let mut file = tokio::fs::File::create(&save_path).await.map_err(|e| e.to_string())?;
+    let mut received: u64 = 0;
+    let mut last_emit: u64 = 0;
+    const EMIT_EVERY: u64 = 64 * 1024;  // throttle events
+
+    while let Some(chunk) = response.chunk().await.map_err(|e| e.to_string())? {
+        file.write_all(&chunk).await.map_err(|e| e.to_string())?;
+        received += chunk.len() as u64;
+        if received - last_emit >= EMIT_EVERY || (total > 0 && received == total) {
+            last_emit = received;
+            if let Some(ref tid) = transfer_id {
+                let _ = app.emit("transfer:progress", serde_json::json!({
+                    "id":        tid,
+                    "direction": "incoming",
+                    "sent":      received,
+                    "total":     total,
+                }));
+            }
+        }
+    }
+    file.flush().await.map_err(|e| e.to_string())?;
+
     Ok(save_path.to_string_lossy().to_string())
 }
 

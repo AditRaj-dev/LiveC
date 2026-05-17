@@ -935,6 +935,30 @@ private fun TransferCard(
                 }
                 StatusPill(transfer.status)
             }
+
+            // Progress bar — only visible while bytes are actually moving.
+            if (transfer.status == TransferItem.Status.UPLOADING ||
+                transfer.status == TransferItem.Status.DOWNLOADING) {
+                val ratio = (transfer.progress ?: 0f).coerceIn(0f, 1f)
+                Column(modifier = Modifier.padding(top = 6.dp)) {
+                    LinearProgressIndicator(
+                        progress = { ratio },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(3.dp)
+                            .clip(RoundedCornerShape(2.dp)),
+                        color = LiveCColors.Accent,
+                        trackColor = LiveCColors.Accent.copy(alpha = 0.12f),
+                    )
+                    Text(
+                        "${(ratio * 100).toInt()}%",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = 9.sp,
+                        color = LiveCColors.TextTertiary,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
+            }
         }
 
         when (transfer.status) {

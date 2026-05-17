@@ -207,6 +207,8 @@ data class TransferItem(
     /** The offerId — kept on both OFFER_PENDING and post-file_ready entries so we
      *  can send file_done back after a successful download. */
     val offerId: String? = null,
+    /** 0f..1f progress while uploading/downloading. null when idle. */
+    val progress: Float? = null,
 ) {
     enum class Status { OFFER_PENDING, PENDING, DOWNLOADING, UPLOADING, DONE, ERROR, REJECTED }
     enum class Direction { INCOMING, OUTGOING }

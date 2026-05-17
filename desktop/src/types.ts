@@ -48,4 +48,6 @@ export interface FileTransfer {
   offerId?: string;
   senderDeviceId?: string;
   fileIds?: string[];
+  /** 0–1 progress while uploading or downloading. Undefined when idle. */
+  progress?: number;
 }

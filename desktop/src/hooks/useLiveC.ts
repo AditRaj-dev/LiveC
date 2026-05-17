@@ -386,6 +386,21 @@ export function useFileTransfers() {
     return () => { unlisten.then((fn) => fn()); };
   }, [updateTransfers]);
 
+  // Per-chunk upload / per-buffer download progress (0..1).
+  useEffect(() => {
+    const unlisten = listen<{ id: string; direction: "incoming" | "outgoing"; sent: number; total: number }>(
+      "transfer:progress",
+      (event) => {
+        const { id, sent, total } = event.payload;
+        const ratio = total > 0 ? Math.min(1, sent / total) : 0;
+        updateTransfers((prev) =>
+          prev.map((t) => (t.id === id ? { ...t, progress: ratio } : t))
+        );
+      }
+    );
+    return () => { unlisten.then((fn) => fn()); };
+  }, [updateTransfers]);
+
   // Our outbound offer was rejected — mark error.
   useEffect(() => {
     const unlisten = listen<{ offerId: string; from: string }>("relay:file_reject", (event) => {
@@ -421,6 +436,7 @@ export function useFileTransfers() {
       const savedPath = await invoke<string>("download_file", {
         url: transfer.downloadUrl,
         filename: transfer.name,
+        transferId: id,
       });
       updateTransfers((prev) => prev.map((t) => t.id === id ? { ...t, status: "done", savedPath } : t));
 

@@ -390,6 +390,19 @@ function TransferRow({
         {transfer.status === "error" && (
           <p className="text-[10px] text-[rgb(var(--sev-critical))] mt-0.5">{transfer.errorMsg}</p>
         )}
+        {(transfer.status === "uploading" || transfer.status === "downloading") && (
+          <div className="mt-1.5 space-y-0.5">
+            <div className="h-1 rounded-full bg-elevated overflow-hidden">
+              <div
+                className="h-full bg-accent transition-[width] duration-150 ease-out"
+                style={{ width: `${Math.round((transfer.progress ?? 0) * 100)}%` }}
+              />
+            </div>
+            <p className="text-[9px] text-tertiary tabular-nums">
+              {Math.round((transfer.progress ?? 0) * 100)}%
+            </p>
+          </div>
+        )}
         {transfer.status === "done" && transfer.savedPath && (
           <button
             onClick={() => onReveal(transfer.savedPath!)}
