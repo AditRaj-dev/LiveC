@@ -1,11 +1,14 @@
 package com.livec.app
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -42,6 +45,11 @@ class MainActivity : ComponentActivity() {
             notifPermLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
 
+        // Ask the user to whitelist us from battery optimization on first launch.
+        // Without this, OEMs (OPPO, Xiaomi, Samsung etc.) aggressively freeze the
+        // foreground service mid-transfer, killing WebSockets and PATCH uploads.
+        requestIgnoreBatteryOptimizations()
+
         // Handle share-sheet intents
         handleShareIntent(intent)
 
@@ -75,6 +83,22 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handleShareIntent(intent)
+    }
+
+    @Suppress("BatteryLife")
+    private fun requestIgnoreBatteryOptimizations() {
+        val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+        if (pm.isIgnoringBatteryOptimizations(packageName)) return
+        try {
+            startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                data = Uri.parse("package:$packageName")
+            })
+        } catch (_: Exception) {
+            // Some OEMs disable this intent — fall back to the generic battery settings screen.
+            try {
+                startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+            } catch (_: Exception) { /* give up silently */ }
+        }
     }
 
     private fun handleShareIntent(intent: Intent?) {

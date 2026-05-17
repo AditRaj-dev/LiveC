@@ -142,7 +142,19 @@ class LiveCService : LifecycleService() {
         clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
 
         createChannels()
-        startForeground(NOTIF_ID, buildNotification("Connecting…"))
+        // API 34+ requires the explicit foregroundServiceType in the startForeground
+        // call (in addition to the manifest declaration). Without it the OS may
+        // silently downgrade the service to a regular background task, making OEM
+        // freezers (OplusHansManager / MIUI / etc.) treat us as killable.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(
+                NOTIF_ID,
+                buildNotification("Connecting…"),
+                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
+            )
+        } else {
+            startForeground(NOTIF_ID, buildNotification("Connecting…"))
+        }
 
         client = RelayClient(
             scope = lifecycleScope,
