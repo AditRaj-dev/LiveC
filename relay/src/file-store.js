@@ -102,7 +102,11 @@ module.exports = {
       return res.status(404).json({ error: 'File not found or expired' });
     }
 
-    res.download(fileInfo.path, (err) => {
+    // dotfiles: 'allow' — required when UPLOAD_DIR's absolute path passes
+    // through a directory whose name starts with a dot (e.g. ".claude" in
+    // a git worktree path). Without this, express's send library 404s
+    // every download because it treats those segments as hidden files.
+    res.download(fileInfo.path, path.basename(fileInfo.path), { dotfiles: 'allow' }, (err) => {
       if (err) {
         // File disappeared from disk (e.g. external cleanup). Evict from tracker.
         fileTracker.delete(fileId);
