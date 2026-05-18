@@ -28,14 +28,18 @@ const MESSAGE_TYPES = Object.freeze({
 
 const BROADCAST = 'broadcast';
 
+// Sized for Render free tier (512 MB RAM, ephemeral disk, sleeps after 15 min idle).
+// Each in-flight PATCH buffers CHUNK_SIZE bytes in RAM, so chunk × concurrent
+// uploads must stay well under the RAM ceiling. File TTLs are short because the
+// container's filesystem evaporates on every cold start anyway.
 const LIMITS = Object.freeze({
-  MAX_FILE_BYTES: 10 * 1024 * 1024 * 1024,         // 10 GB (was 100 MB)
+  MAX_FILE_BYTES: 100 * 1024 * 1024,               // 100 MB
   MAX_TEXT_BYTES: 1 * 1024 * 1024,
-  FILE_TTL_MS: 7 * 24 * 60 * 60 * 1000,            // 7 days (was 90 sec)
-  OFFER_TTL_MS: 24 * 60 * 60 * 1000,               // unaccepted offers: 24h
-  OFFLINE_QUEUE_TTL_MS: 7 * 24 * 60 * 60 * 1000,   // 7 days (was 1h)
-  OFFLINE_QUEUE_MAX_PER_DEVICE: 200,               // was 50
-  CHUNK_SIZE: 8 * 1024 * 1024,                     // 8 MB TUS-style PATCH chunk
+  FILE_TTL_MS: 60 * 60 * 1000,                     // 1 hour
+  OFFER_TTL_MS: 30 * 60 * 1000,                    // 30 min unaccepted
+  OFFLINE_QUEUE_TTL_MS: 60 * 60 * 1000,            // 1 hour
+  OFFLINE_QUEUE_MAX_PER_DEVICE: 100,
+  CHUNK_SIZE: 1 * 1024 * 1024,                     // 1 MB PATCH chunk
 });
 
 const UPLOAD_FIELD_NAME = 'file';

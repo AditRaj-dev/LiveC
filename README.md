@@ -60,8 +60,8 @@ Per-device Ed25519 identity. Private keys live in **Windows Credential Manager**
 <tr>
 <td width="33%" valign="top">
 
-### 📦 Big files. Real files.
-**Up to 10 GB.** Streaming chunked uploads. Survives a Cloudflare timeout. Survives your WiFi dropping mid-send. Pick it back up where it left off.
+### 📦 Files up to 100 MB
+Streaming 1 MB chunks. Survives Cloudflare timeouts. Survives your WiFi dropping mid-send. Pick it back up where it left off. *(Limits are sized for free-tier hosting — bump the constants if you self-host on bigger metal.)*
 
 </td>
 <td width="33%" valign="top">
@@ -117,6 +117,15 @@ docker compose up -d
 ```
 
 That's the entire server. It's listening on `:3000`. Point a Cloudflare tunnel or Caddy at it if you want to reach it from outside your network.
+
+**Or deploy free on Render:**
+1. Push this repo to your own GitHub.
+2. Render Dashboard → **New +** → **Web Service** → connect the repo.
+3. Root Directory: `relay`. Runtime: **Docker**. Plan: **Free**.
+4. Environment Variables: add `LIVEC_SIGNING_SECRET` = output of `openssl rand -hex 32`.
+5. Deploy. Use `wss://<service-name>.onrender.com/ws` as the relay URL in the apps.
+
+Free-tier caveats baked into the defaults: 100 MB file cap, 1 h TTLs (the container's disk evaporates on restart), and the service sleeps after 15 min of no traffic. WebSocket reconnects automatically when traffic resumes; in-flight uploads survive via HEAD-based resume.
 
 ### 2. Install the apps
 

@@ -26,14 +26,15 @@ export const MESSAGE_TYPES = {
 
 export const BROADCAST = "broadcast";
 
+// Sized for Render free tier (512 MB RAM, ephemeral disk, idle-sleeps).
 export const LIMITS = {
-  MAX_FILE_BYTES: 10 * 1024 * 1024 * 1024,        // 10 GB
+  MAX_FILE_BYTES: 100 * 1024 * 1024,              // 100 MB
   MAX_TEXT_BYTES: 1 * 1024 * 1024,
-  FILE_TTL_MS: 7 * 24 * 60 * 60 * 1000,           // 7 days
-  OFFER_TTL_MS: 24 * 60 * 60 * 1000,              // 24h
-  OFFLINE_QUEUE_TTL_MS: 7 * 24 * 60 * 60 * 1000,  // 7 days
-  OFFLINE_QUEUE_MAX_PER_DEVICE: 200,
-  CHUNK_SIZE: 8 * 1024 * 1024,                    // 8 MB
+  FILE_TTL_MS: 60 * 60 * 1000,                    // 1 hour
+  OFFER_TTL_MS: 30 * 60 * 1000,                   // 30 min
+  OFFLINE_QUEUE_TTL_MS: 60 * 60 * 1000,           // 1 hour
+  OFFLINE_QUEUE_MAX_PER_DEVICE: 100,
+  CHUNK_SIZE: 1 * 1024 * 1024,                    // 1 MB
 } as const;
 
 /** Convert the configured relay URL (ws://…/ws or wss://…/ws) to an HTTP base. */

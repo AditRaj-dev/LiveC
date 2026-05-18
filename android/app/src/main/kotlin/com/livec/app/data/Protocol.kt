@@ -30,14 +30,15 @@ object MessageType {
 
 const val BROADCAST = "broadcast"
 
+// Sized for Render free tier (512 MB RAM, ephemeral disk, idle-sleeps).
 object Limits {
-    const val MAX_FILE_BYTES = 10L * 1024L * 1024L * 1024L              // 10 GB
+    const val MAX_FILE_BYTES = 100L * 1024L * 1024L                     // 100 MB
     const val MAX_TEXT_BYTES = 1L * 1024L * 1024L
-    const val FILE_TTL_MS = 7L * 24L * 60L * 60L * 1000L                // 7 days
-    const val OFFER_TTL_MS = 24L * 60L * 60L * 1000L                    // 24h
-    const val OFFLINE_QUEUE_TTL_MS = 7L * 24L * 60L * 60L * 1000L       // 7 days
-    const val OFFLINE_QUEUE_MAX_PER_DEVICE = 200
-    const val CHUNK_SIZE = 8 * 1024 * 1024                              // 8 MB
+    const val FILE_TTL_MS = 60L * 60L * 1000L                           // 1 hour
+    const val OFFER_TTL_MS = 30L * 60L * 1000L                          // 30 min
+    const val OFFLINE_QUEUE_TTL_MS = 60L * 60L * 1000L                  // 1 hour
+    const val OFFLINE_QUEUE_MAX_PER_DEVICE = 100
+    const val CHUNK_SIZE = 1 * 1024 * 1024                              // 1 MB
 }
 
 const val UPLOAD_FIELD_NAME = "file"

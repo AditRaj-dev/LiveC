@@ -47,14 +47,15 @@ pub mod msg {
 }
 
 // ── Limits ────────────────────────────────────────────────────────────────────
+// Sized for Render free tier (512 MB RAM, ephemeral disk, idle-sleeps).
 pub mod limits {
-    pub const MAX_FILE_BYTES: u64 = 10 * 1024 * 1024 * 1024;        // 10 GB
+    pub const MAX_FILE_BYTES: u64 = 100 * 1024 * 1024;              // 100 MB
     pub const MAX_TEXT_BYTES: usize = 1 * 1024 * 1024;
-    pub const FILE_TTL_MS: u64 = 7 * 24 * 60 * 60 * 1000;           // 7 days
-    pub const OFFER_TTL_MS: u64 = 24 * 60 * 60 * 1000;              // 24h
-    pub const OFFLINE_QUEUE_TTL_MS: u64 = 7 * 24 * 60 * 60 * 1000;  // 7 days
-    pub const OFFLINE_QUEUE_MAX_PER_DEVICE: usize = 200;
-    pub const CHUNK_SIZE: usize = 8 * 1024 * 1024;                  // 8 MB
+    pub const FILE_TTL_MS: u64 = 60 * 60 * 1000;                    // 1 hour
+    pub const OFFER_TTL_MS: u64 = 30 * 60 * 1000;                   // 30 min
+    pub const OFFLINE_QUEUE_TTL_MS: u64 = 60 * 60 * 1000;           // 1 hour
+    pub const OFFLINE_QUEUE_MAX_PER_DEVICE: usize = 100;
+    pub const CHUNK_SIZE: usize = 1 * 1024 * 1024;                  // 1 MB
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
