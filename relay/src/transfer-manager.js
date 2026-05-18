@@ -95,6 +95,34 @@ function getOfferFile(offerId, fileId) {
   };
 }
 
+/**
+ * Return all in-flight offers awaiting `file_accept`/`file_reject` from
+ * `recipientId` (including broadcast offers). Called on device reconnect to
+ * re-deliver offers whose original send was lost when the WS was killed.
+ */
+function getPendingOffersForRecipient(recipientId) {
+  const out = [];
+  for (const [offerId, offer] of offers.entries()) {
+    if (offer.accepted) continue; // sender side already moved on
+    if (offer.recipientId !== recipientId && offer.recipientId !== 'broadcast') continue;
+    const files = [];
+    for (const [fileId, f] of offer.files.entries()) {
+      if (f.state === FILE_STATE.PENDING) {
+        files.push({
+          fileId,
+          name: f.name,
+          size: f.size,
+          sha256: f.sha256,
+          mimeType: f.mimeType,
+        });
+      }
+    }
+    if (files.length === 0) continue;
+    out.push({ offerId, senderId: offer.senderId, roomToken: offer.roomToken, files });
+  }
+  return out;
+}
+
 /** Get current upload offset for HEAD response. */
 function getUploadOffset(offerId, fileId) {
   const offer = offers.get(offerId);
@@ -253,4 +281,5 @@ setInterval(() => {
 module.exports = {
   registerOffer, acceptFile, validateUploadToken, getOfferFile,
   getUploadOffset, appendChunk, completeUpload, markDone, rejectOffer,
+  getPendingOffersForRecipient,
 };

@@ -192,9 +192,30 @@ wss.on('connection', (ws, req) => {
       }
 
       roomManager.join(ws, roomToken, deviceId, deviceName, platform, fingerprint || '');
-      
+
       // Flush any queued messages for this device
       offlineQueue.flush(deviceId, ws);
+
+      // Re-deliver any in-flight file_offers whose original send was lost
+      // (e.g. recipient WS got killed by an OEM background freezer between
+      // the relay's socket.send() and the actual TCP transmit). Sender's
+      // upload_file is still blocked on the oneshot waiting for accept/reject.
+      const pending = transferManager.getPendingOffersForRecipient(deviceId);
+      for (const p of pending) {
+        try {
+          ws.send(JSON.stringify({
+            type:    MESSAGE_TYPES.FILE_OFFER,
+            id:      crypto.randomUUID(),
+            from:    p.senderId,
+            to:      deviceId,
+            room:    p.roomToken,
+            payload: { offerId: p.offerId, files: p.files },
+          }));
+          console.log(`[Server] Replayed pending file_offer ${p.offerId.slice(0,8)} → ${deviceId.slice(0,8)}`);
+        } catch (e) {
+          console.warn('[Server] Failed to replay file_offer:', e.message);
+        }
+      }
       return;
     }
 
