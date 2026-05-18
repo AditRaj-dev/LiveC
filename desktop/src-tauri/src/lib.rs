@@ -252,7 +252,14 @@ async fn chunked_upload(
 
     let chunk_size = protocol::limits::CHUNK_SIZE;
     let max_attempts: u32 = 5;
-    let client = reqwest::Client::new();
+    // HTTP/1.1 only — avoids Cloudflare HTTP/2 flow-control stalls that hung
+    // PATCH bodies mid-transfer. pool_max_idle_per_host(0) opens a fresh TCP
+    // connection per chunk so per-connection byte accumulation can't choke us.
+    let client = reqwest::Client::builder()
+        .http1_only()
+        .pool_max_idle_per_host(0)
+        .build()
+        .map_err(|e| e.to_string())?;
 
     let mut file = tokio::fs::File::open(path).await.map_err(|e| e.to_string())?;
     let mut chunk_buf = vec![0u8; chunk_size];
@@ -266,11 +273,14 @@ async fn chunked_upload(
         let chunk = &mut chunk_buf[..to_read];
         file.read_exact(chunk).await.map_err(|e| e.to_string())?;
 
+        // Per-PATCH timeout so a stuck body upload bails into the retry path
+        // instead of hanging forever (default reqwest timeout = none).
         let res = client
             .patch(patch_url)
             .header("Authorization", format!("Bearer {}", token))
             .header("Upload-Offset", offset.to_string())
             .header("Content-Type", "application/offset+octet-stream")
+            .timeout(std::time::Duration::from_secs(60))
             .body(chunk.to_vec())
             .send()
             .await;

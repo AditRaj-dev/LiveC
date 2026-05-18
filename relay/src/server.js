@@ -57,6 +57,7 @@ function _authUploadToken(req, res) {
 }
 
 app.head('/upload/:offerId/:fileId', (req, res) => {
+  console.log(`[Server] HEAD /upload/${req.params.offerId.slice(0,8)}/${req.params.fileId.slice(0,8)}`);
   const auth = _authUploadToken(req, res);
   if (!auth) return;
   const info = transferManager.getUploadOffset(auth.offerId, auth.fileId);
@@ -68,12 +69,17 @@ app.head('/upload/:offerId/:fileId', (req, res) => {
 });
 
 app.patch('/upload/:offerId/:fileId', async (req, res) => {
+  console.log(`[Server] PATCH /upload/${req.params.offerId.slice(0,8)}/${req.params.fileId.slice(0,8)} ` +
+    `Upload-Offset=${req.headers['upload-offset']} Content-Length=${req.headers['content-length']} ` +
+    `auth=${(req.headers['authorization'] || '').slice(0, 20)}…`);
+
   const auth = _authUploadToken(req, res);
-  if (!auth) return;
+  if (!auth) { console.warn('[Server] PATCH auth failed'); return; }
   const { offerId, fileId } = auth;
 
   const offset = parseInt(req.headers['upload-offset'], 10);
   if (Number.isNaN(offset) || offset < 0) {
+    console.warn(`[Server] PATCH bad offset: ${req.headers['upload-offset']}`);
     return res.status(400).json({ error: 'Missing or invalid Upload-Offset' });
   }
 
@@ -95,8 +101,11 @@ app.patch('/upload/:offerId/:fileId', async (req, res) => {
   }
   const body = Buffer.concat(chunks, total);
 
+  console.log(`[Server] PATCH body=${total}B for ${fileId.slice(0,8)}`);
+
   const result = await transferManager.appendChunk(offerId, fileId, offset, body);
   if (!result.ok) {
+    console.warn(`[Server] PATCH appendChunk failed: ${result.status} ${result.reason}`);
     if (result.status === 409) {
       // Help the client resync by surfacing the authoritative offset.
       const info = transferManager.getUploadOffset(offerId, fileId);
