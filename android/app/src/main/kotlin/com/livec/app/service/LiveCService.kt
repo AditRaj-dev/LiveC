@@ -1,11 +1,14 @@
 package com.livec.app.service
 
 import android.app.*
+import android.app.DownloadManager
+import android.content.BroadcastReceiver
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.Color
 import android.net.Uri
 import android.os.Build
@@ -60,6 +63,9 @@ private const val EXTRA_ACCEPT_FILE_IDS = "extra_accept_file_ids"
 private const val EXTRA_SENDER_DEVICE_ID = "extra_sender_device_id"
 private const val EXTRA_FILE_DONE_OFFER = "extra_file_done_offer"
 private const val EXTRA_FILE_DONE_FILE  = "extra_file_done_file"
+private const val EXTRA_TRACK_DOWNLOAD_ID = "extra_track_download_id"
+private const val EXTRA_TRACK_OFFER_ID    = "extra_track_offer_id"
+private const val EXTRA_TRACK_FILE_ID     = "extra_track_file_id"
 
 private sealed class OfferAcceptResult {
     data class Accepted(val uploadTokens: Map<String, String>) : OfferAcceptResult()
@@ -86,6 +92,44 @@ class LiveCService : LifecycleService() {
 
     // Outbound offers awaiting file_accept/file_reject from the recipient.
     private val pendingOffers = ConcurrentHashMap<String, CompletableDeferred<OfferAcceptResult>>()
+
+    // DownloadManager downloadId → (offerId, fileId, senderDeviceId). When the
+    // download completes successfully we send file_done so the relay drops the
+    // file. Sending file_done immediately after dm.enqueue() (as the old code
+    // did) deleted the file BEFORE DownloadManager actually fetched it → 404
+    // → "Download failed".
+    private val pendingDownloads = ConcurrentHashMap<Long, Triple<String, String, String>>()
+
+    private val downloadCompleteReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val id = intent?.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L) ?: -1L
+            if (id < 0) return
+            val info = pendingDownloads.remove(id) ?: return
+            val (offerId, fileId, senderDeviceId) = info
+
+            val dm = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            dm.query(DownloadManager.Query().setFilterById(id))?.use { cur ->
+                if (cur.moveToFirst()) {
+                    val statusIdx = cur.getColumnIndex(DownloadManager.COLUMN_STATUS)
+                    val status = cur.getInt(statusIdx)
+                    if (status == DownloadManager.STATUS_SUCCESSFUL) {
+                        Log.d(TAG, "Download id=$id succeeded → sending file_done")
+                        if (roomToken.isNotEmpty() && senderDeviceId.isNotEmpty()) {
+                            client.send(Message.fileDone(deviceId, roomToken, offerId, fileId, senderDeviceId))
+                        }
+                        AppState.updateTransfer(fileId) { copy(status = TransferItem.Status.DONE) }
+                    } else {
+                        val reasonIdx = cur.getColumnIndex(DownloadManager.COLUMN_REASON)
+                        val reason = if (reasonIdx >= 0) cur.getInt(reasonIdx) else -1
+                        Log.e(TAG, "Download id=$id failed status=$status reason=$reason — NOT sending file_done")
+                        AppState.updateTransfer(fileId) {
+                            copy(status = TransferItem.Status.ERROR, errorMsg = "DownloadManager status=$status reason=$reason")
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     // Cross-transport dedup: same msg.id arriving via relay + LAN is processed once.
     private val seenIds = ArrayDeque<String>()
@@ -176,6 +220,17 @@ class LiveCService : LifecycleService() {
 
         clipboard.addPrimaryClipChangedListener(clipListener)
 
+        // Listen for DownloadManager completion broadcasts.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(downloadCompleteReceiver,
+                IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
+                Context.RECEIVER_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
+            registerReceiver(downloadCompleteReceiver,
+                IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
+        }
+
         lifecycleScope.launch {
             configStore.ensureDeviceId()
             configStore.flow.distinctUntilChanged().collect { cfg ->
@@ -251,11 +306,23 @@ class LiveCService : LifecycleService() {
                 client.send(Message.fileDone(deviceId, roomToken, offerId, fileId, senderDeviceId))
             }
         }
+        // Track a DownloadManager download — fire file_done only on success.
+        intent?.let { i ->
+            val dlId = i.getLongExtra(EXTRA_TRACK_DOWNLOAD_ID, -1L)
+            val offerId = i.getStringExtra(EXTRA_TRACK_OFFER_ID)
+            val fileId  = i.getStringExtra(EXTRA_TRACK_FILE_ID)
+            val sender  = i.getStringExtra(EXTRA_SENDER_DEVICE_ID)
+            if (dlId >= 0 && !offerId.isNullOrEmpty() && !fileId.isNullOrEmpty() && !sender.isNullOrEmpty()) {
+                pendingDownloads[dlId] = Triple(offerId, fileId, sender)
+                Log.d(TAG, "Tracking DownloadManager id=$dlId for offer ${offerId.take(8)}…")
+            }
+        }
         return START_STICKY
     }
 
     override fun onDestroy() {
         clipboard.removePrimaryClipChangedListener(clipListener)
+        try { unregisterReceiver(downloadCompleteReceiver) } catch (_: Exception) {}
         client.stop()
         lanClient.disconnect()
         lanDiscovery?.stop()
@@ -897,6 +964,27 @@ class LiveCService : LifecycleService() {
                 Intent(ctx, LiveCService::class.java)
                     .putExtra(EXTRA_FILE_DONE_OFFER, offerId)
                     .putExtra(EXTRA_FILE_DONE_FILE, fileId)
+                    .putExtra(EXTRA_SENDER_DEVICE_ID, senderDeviceId)
+            )
+        }
+
+        /**
+         * Register a DownloadManager download for completion-tracking. Service
+         * fires `file_done` to the sender ONLY when DownloadManager reports
+         * STATUS_SUCCESSFUL. Until then the file stays on the relay.
+         */
+        fun trackDownloadForCompletion(
+            ctx: Context,
+            downloadId: Long,
+            offerId: String,
+            fileId: String,
+            senderDeviceId: String,
+        ) {
+            ctx.startForegroundService(
+                Intent(ctx, LiveCService::class.java)
+                    .putExtra(EXTRA_TRACK_DOWNLOAD_ID, downloadId)
+                    .putExtra(EXTRA_TRACK_OFFER_ID, offerId)
+                    .putExtra(EXTRA_TRACK_FILE_ID, fileId)
                     .putExtra(EXTRA_SENDER_DEVICE_ID, senderDeviceId)
             )
         }

@@ -117,13 +117,16 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, item.name)
         AppState.updateTransfer(item.id) { copy(status = TransferItem.Status.DOWNLOADING) }
         try {
-            dm.enqueue(req)
-            AppState.updateTransfer(item.id) { copy(status = TransferItem.Status.DONE) }
-            // Tell the relay it can drop the file immediately.
+            val downloadId = dm.enqueue(req)
+            // DO NOT mark Status.DONE yet — DownloadManager hasn't actually fetched
+            // anything. Hand the downloadId to LiveCService, which listens for
+            // ACTION_DOWNLOAD_COMPLETE and fires file_done only on success. Sending
+            // file_done here would delete the file before DownloadManager could
+            // fetch it (the bug we just fixed).
             val offerId = item.offerId
             val sender = item.senderDeviceId
             if (!offerId.isNullOrEmpty() && !sender.isNullOrEmpty()) {
-                LiveCService.markFileDone(ctx, offerId, item.id, sender)
+                LiveCService.trackDownloadForCompletion(ctx, downloadId, offerId, item.id, sender)
             }
         } catch (e: Exception) {
             AppState.updateTransfer(item.id) {
